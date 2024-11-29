@@ -12,33 +12,12 @@ import {
 import { Input } from "@/components/ui/input"; // Added FormProvider
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Relationship } from "../components/dialog/Relatioship";
 
 const Page = () => {
-  const router = useRouter();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  useEffect(() => {
-    console.log(router.query);
-    if (router.query?.dialogOpen === "true") {
-      setIsDialogOpen(true);
-    }
-  }, [router.query]);
-
   return (
-    <div>
-      {/* Relationship Link */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
-            <DialogDescription>
-              Make changes to your profile here. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Wrap the form with FormProvider to provide context */}
-        </DialogContent>
-      </Dialog>
+    <div className="flex justify-end mr-3 mt-4">
+      <Relationship />
     </div>
   );
 };

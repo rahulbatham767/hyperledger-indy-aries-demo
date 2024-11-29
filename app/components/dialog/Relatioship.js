@@ -25,8 +25,8 @@ export function Relationship() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-inherit hover:bg-slate-300 text-white hover:text-black">
-          Relationship
+        <Button className="hover:bg-slate-300 text-white hover:text-black">
+          Send a New Connection
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

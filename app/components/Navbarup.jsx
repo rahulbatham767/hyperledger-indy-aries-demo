@@ -12,7 +12,6 @@ import {
   NavigationMenuViewport,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
-import { Relationship } from "./dialog/Relatioship";
 
 const Navbarup = () => {
   return (
@@ -20,7 +19,13 @@ const Navbarup = () => {
       <NavigationMenu>
         <NavigationMenuList>
           <NavigationMenuItem>
-            <Relationship />
+            <Link href="/relationship" legacyBehavior passHref>
+              <NavigationMenuLink
+                className={`${navigationMenuTriggerStyle()} bg-inherit text-white`}
+              >
+                Relationship
+              </NavigationMenuLink>
+            </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
             <Link href="/credentials" legacyBehavior passHref>

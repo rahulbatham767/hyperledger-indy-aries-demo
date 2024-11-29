@@ -1,3 +1,36 @@
 {
-  "extends": ["next/babel", "next/core-web-vitals"]
+  "extends": [
+    "next/babel", // For Next.js specific Babel configuration
+    "next/core-web-vitals", // Next.js recommended rules
+    "eslint:recommended", // Basic ESLint recommended rules
+    "plugin:prettier/recommended" // Integrate Prettier into ESLint
+  ],
+  "root": true,
+  "env": {
+    "node": true,
+    "browser": true,
+    "es2020": true
+  },
+  "plugins": ["prettier"],
+  "rules": {
+    // Prettier rules to handle spaces and formatting
+    "prettier/prettier": [
+      "error",
+      {
+        "semi": true,
+        "singleQuote": true,
+        "printWidth": 80,
+        "trailingComma": "all",
+        "tabWidth": 2,
+        "useTabs": false,
+        "arrowParens": "always",
+        "endOfLine": "lf",
+        // Remove excess whitespace
+        "space-before-blocks": "error",
+        "no-multi-spaces": ["error", { "ignoreEOLComments": true }],
+        "no-trailing-spaces": "error"
+      }
+    ],
+    "no-magic-numbers": "off" // Turn off magic numbers rule (optional)
+  }
 }
