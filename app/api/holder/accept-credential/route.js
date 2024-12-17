@@ -2,29 +2,30 @@
 import axios from "axios";
 
 export async function POST(req) {
-  const { connectionId, credentialRequestId, credentialId } = await req.json();
+  const { holder } = await req.json();
+  const cred_ex_id = new URL(req.url).searchParams.get("cred_ex_id");
 
   try {
     const response = await axios.post(
-      `http://10.210.13.86:8001/issue-credential/records/${credentialRequestId}/accept`, // ACA-Py Agent API URL
-      {
-        credential_id: credentialId, // ID of the credential being accepted
-        connection_id: connectionId, // The connection ID to associate with
-      },
+      `${process.env.NEXT_PUBLIC_HOLDER_ENDPOINT}/issue-credential-2.0/records/${cred_ex_id}/send-request`, // ACA-Py Agent API URL
+      holder,
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer <YOUR_AUTH_TOKEN>", // If required
         },
       }
     );
-
+    console.log("accept credential " + response);
     return Response.json(await response.data); // Return the response in JSON format
   } catch (error) {
-    console.error(error);
+    // Log and return the error
+    console.error("Error sending Credential:", error.message);
     return Response.json(
-      { error: "Failed to accept credential" },
-      { status: 500 }
+      {
+        error: "Failed to Accept Credential.",
+        details: error.response?.data || error.message, // Provide additional details for debugging
+      },
+      { status: error.response?.status || 500 }
     );
   }
 }

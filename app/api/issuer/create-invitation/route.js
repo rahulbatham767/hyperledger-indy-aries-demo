@@ -1,16 +1,17 @@
-// pages/api/aries/create-invitation.js
 import axios from "axios";
 
 export async function POST(req) {
-  const body = await req.json();
-
   try {
+    const { Alias } = await req.json();
+
+    console.log(Alias);
     const response = await axios.post(
-      `http://10.210.13.86:8001/connections/create-invitation`, // ACA-Py Agent API URL
+      `${process.env.NEXT_PUBLIC_ISSUER_ENDPOINT}/out-of-band/create-invitation`, // ACA-Py Agent API URL
       {
-        connection_protocol: "connections",
-        ...body,
+        alias: Alias,
+        handshake_protocols: ["https://didcomm.org/didexchange/1.0"],
       },
+
       {
         headers: {
           "Content-Type": "application/json",
@@ -18,12 +19,17 @@ export async function POST(req) {
       }
     );
 
-    return Response.json(await response.data); // Return the response in JSON format
+    console.log(response.data);
+    return Response.json({ invite: response.data }, { status: 200 }); // Return the response in JSON format
   } catch (error) {
-    console.error(error);
+    // Log and return the error
+    console.error("Error Creating  Invitation:", error.message);
     return Response.json(
-      { error: "Failed to create invitation " + error },
-      { status: 500 }
+      {
+        error: "Failed to Create  Invitation.",
+        details: error.response?.data || error.message, // Provide additional details for debugging
+      },
+      { status: error.response?.status || 500 }
     );
   }
 }

@@ -58,7 +58,9 @@
     --chart-5: 340 75% 55%;
   }
 }
-
+:root {
+  background-color: white;
+}
 body {
   height: 100%;
 }

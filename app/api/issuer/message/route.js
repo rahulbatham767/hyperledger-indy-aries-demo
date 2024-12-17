@@ -2,19 +2,28 @@
 import axios from "axios";
 
 export async function POST(req) {
-  const { connectionId, message } = await req.json();
-
-  if (!connectionId || !message) {
-    return Response.json(
-      { error: "Connection ID and message are required." },
-      { status: 400 }
-    );
-  }
-
   try {
+    // Parse the JSON body
+    const { content, param } = await req.json();
+    console.log(content);
+    // const url = new URL(req.url);
+    // const conn_id = url.searchParams.get("conn_id");
+
+    // Validate input
+    if (!param || !content) {
+      return Response.json(
+        { error: "Connection ID and message content are required." },
+        { status: 400 }
+      );
+    }
+
+    // console.log("The connection ID is:", conn_id);
+    console.log("Message content:", content);
+
+    // Send the message to the ACA-Py endpoint
     const response = await axios.post(
-      `http://10.210.13.86:8001/connections/${connectionId}/send-message`, // ACA-Py Agent API URL
-      { content: message }, // Message content
+      `${process.env.NEXT_PUBLIC_ISSUER_ENDPOINT}/connections/${param}/send-message`, // ACA-Py Agent API URL
+      { content }, // Message content payload
       {
         headers: {
           "Content-Type": "application/json",
@@ -22,12 +31,21 @@ export async function POST(req) {
       }
     );
 
-    return Response.json(await response.data); // Send the API response as JSON
+    console.log("Message sent successfully:", response.data);
+
+    // Return the API response as JSON
+    return Response.json(response.data);
   } catch (error) {
+    // Log and return the error
+    console.error("Error sending message:", error.message);
+    // Log and return the error
     console.error("Error sending message:", error.message);
     return Response.json(
-      { error: "Failed to send the message." },
-      { status: 500 }
+      {
+        error: "Failed to send the message.",
+        details: error.response?.data || error.message, // Provide additional details for debugging
+      },
+      { status: error.response?.status || 500 }
     );
   }
 }

@@ -180,7 +180,7 @@ export const CardSkeletonContainer = ({
   return (
     <div
       className={cn(
-        "h-[10rem]  rounded-xl z-40",
+        "h-[10rem] rounded-xl z-40",
         className,
         showGradient &&
           "bg-neutral-300 dark:bg-[rgba(40,40,40,0.70)] [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)]"
@@ -247,6 +247,7 @@ export const Aries = ({ className }) => {
         src={"https://idramp.com/wp-content/uploads/2020/06/HypLogo_Color.png"}
         width={"25"}
         height={"25"}
+        alt="Aries"
       />
     </div>
   );
