@@ -77,11 +77,17 @@ const Credentials = () => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {parsedSchema.map((schema) => (
-                  <SelectItem key={schema.id} value={schema.id}>
-                    {schema.name}
+                {parsedSchema && parsedSchema.length > 0 ? (
+                  parsedSchema.map((schema) => (
+                    <SelectItem key={schema.id} value={schema.id}>
+                      {schema.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-schema" disabled>
+                    No Schema Present
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </FormItem>
@@ -115,7 +121,11 @@ const Credentials = () => {
                     </SelectContent>
                   </div>
                 ) : (
-                  <p>Select a schema to view its version.</p>
+                  <SelectContent>
+                    <SelectItem key="no" value={"no schema version available"}>
+                      No Schema Version Available
+                    </SelectItem>
+                  </SelectContent>
                 )}
               </SelectContent>
             </Select>

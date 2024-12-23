@@ -11,22 +11,22 @@ export async function POST(req) {
   // Mock user data
   const users = [
     {
-      email: "alice@gmail.com",
+      email: "virat@gmail.com",
       password: "password123",
-      name: "Alice",
+      name: "Virat",
       role: "user",
     },
     {
-      email: "faber@gmail.com",
+      email: "bombay@gmail.com",
       password: "password123",
-      name: "Faber",
+      name: "IIT BOMBAY",
       role: "admin",
       company: "college",
     },
     {
-      email: "fiber@gmail.com",
+      email: "accenture@gmail.com",
       password: "password123",
-      name: "Faber",
+      name: "Accenture",
       role: "verifier",
       company: "college",
     },

@@ -175,3 +175,40 @@ export function ProposalforCredential(issuer) {
 
   return payload;
 }
+
+export function mapAttributes(attributes) {
+  console.log("Attributes:", attributes); // Debugging step to check the value
+
+  if (!Array.isArray(attributes)) {
+    throw new TypeError("Expected attributes to be an array");
+  }
+
+  const mappedAttributes = {};
+  attributes.forEach((attr, index) => {
+    const attrNumber = index + 1; // Number starts from 1
+    const key = `attr${attrNumber}_referent`;
+    mappedAttributes[key] = { name: attr };
+  });
+
+  return mappedAttributes;
+}
+
+export function ProofRequests(proof) {
+  const data = {
+    auto_remove: true,
+    auto_verify: false,
+    comment: "Proof request of academic credentials",
+    connection_id: proof.connection_id,
+    presentation_request: {
+      indy: {
+        name: "Proof request",
+        version: "1.0",
+        nonce: "1",
+        requested_attributes: proof.requested_attributes,
+        requested_predicates: proof.requested_predicates,
+      },
+    },
+    trace: false,
+  };
+  return data;
+}

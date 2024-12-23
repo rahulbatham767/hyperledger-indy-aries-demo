@@ -2,7 +2,7 @@ import axios from "axios";
 
 export async function POST(req) {
   const { data } = await req.json();
-  console.log(data);
+  console.log("data is ", data);
   try {
     const response = await axios.post(
       `${process.env.NEXT_PUBLIC_ISSUER_ENDPOINT}/schemas`, // ACA-Py Agent API URL

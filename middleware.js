@@ -12,7 +12,8 @@ export function middleware(request) {
     { path: "/connection", roles: ["user", "verifier", "admin"] },
     { path: "/credentials", roles: ["user", "verifier", "admin"] },
     { path: "/records", roles: ["user", "verifier", "admin"] },
-    { path: "/proof-requests", roles: ["verifier"] }, // Only verifiers can access
+    { path: "/proof-request", roles: ["verifier"] }, // Only verifiers can access
+    { path: "/validate-proof", roles: ["verifier"] }, // Only verifiers can access
     { path: "/issuing", roles: ["admin", "verifier", "user"] },
     { path: "/message", roles: ["user", "verifier", "admin"] },
   ];

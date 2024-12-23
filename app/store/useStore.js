@@ -8,15 +8,19 @@ import { persist } from "zustand/middleware";
 const userAccess = Cookies.get("userRole"); // Retrieve the user role from cookies
 console.log("User Role:", userAccess); // Log the user role for debugging
 
-let url, issuerEnd, holderEnd;
+let url;
 if (userAccess === "admin") {
   console.log("Issuer End");
   url = "/api/issuer";
-  issuerEnd = `${process.env.NEXT_PUBLIC_ISSUER_ENDPOINT}`;
-} else {
+} else if (userAccess === "verifier") {
+  console.log("Verifier End:", userAccess);
+  url = "http://localhost:8031/out-of-band";
+} else if (userAccess === "user") {
   console.log("Holder End:", userAccess);
-  holderEnd = `${process.env.NEXT_PUBLIC_HOLDER_ENDPOINT}`;
   url = "/api/holder";
+} else {
+  console.log("Unknown user access type:", userAccess);
+  // Handle unknown userAccess case if needed
 }
 
 // Log the selected URL for debugging
@@ -42,6 +46,7 @@ const useStore = create(
       Defination: [],
       Message: [],
       proofRequest: [], // Holds the proof request data
+      RequestedCred: [],
       showNotification: false, // Flag to control showing notifications
 
       // addProofRequest: (request) => {
@@ -184,7 +189,7 @@ const useStore = create(
 
       RecieveInvitation: async (data) => {
         set({ loading: true, error: null });
-        console.log("received Invitation" + data);
+        console.log("received Invitation" + url);
         try {
           const response = await axios.post(`${url}/receive-invitation`, {
             invitation: data,
@@ -207,10 +212,11 @@ const useStore = create(
       // Create Schema
       createSchema: async (data) => {
         set({ loading: true, error: null });
-        console.log(data);
+        console.log("data in create schema", data);
         try {
           const response = await axios.post(`${url}/create-schema`, { data });
           const newSchema = response.data;
+          toast.success("Schema Created Successfully ");
           const currentSchema = get().Schemas || [];
           set({
             Schemas: [...currentSchema, newSchema],
@@ -219,6 +225,7 @@ const useStore = create(
 
           // Correct use of get to call setToast
         } catch (error) {
+          toast.error("Failed to Create Schema " + error?.message);
           set({ error: error.message, loading: false });
         }
       },
@@ -277,6 +284,8 @@ const useStore = create(
           const response = await axios.post(`${url}/credential-defination`, {
             issuer,
           });
+          toast.success("Credential Defination Created Successfully ");
+
           const CredentialDefinations = get.Defination() || [];
           const CurrentDefination = response.data;
           set({
@@ -284,6 +293,10 @@ const useStore = create(
             loading: false,
           }); // Update data and clear loading
         } catch (error) {
+          toast.success(
+            "Failed to create Credential Defination" + error?.message
+          );
+
           set({ error: error.message, loading: false }); // Update error state and clear loading
         }
       },
@@ -335,7 +348,7 @@ const useStore = create(
           const response = await axios.post(`${url}/credential-send`, {
             formData,
           });
-
+          toast.success("Credenntial Issued Successfully");
           const issuedCredential = get().IssueCredentials || [];
           const CurrentCredential = response.data;
           set({
@@ -343,6 +356,7 @@ const useStore = create(
             loading: false,
           }); // Update data and clear loading
         } catch (error) {
+          toast.error("Failed to Issue credential");
           set({ error: error.message, loading: false }); // Update error state and clear loading
         }
       },
@@ -375,6 +389,33 @@ const useStore = create(
         } catch (error) {
           set({ error: error.message, loading: false }); // Update error state and clear loading
         }
+      },
+      fetchProofRequest: async () => {
+        set({ loading: true, error: null });
+        const response = await axios.get(
+          "http://localhost:8001/present-proof-2.0/records"
+        );
+
+        console.log(response.data);
+
+        const currentproof = response.data.results;
+        set({
+          proofRequest: currentproof,
+          loading: false,
+        }); // Update data and clear
+      },
+      fetchRequestedCred: async (param) => {
+        set({ loading: true, error: null });
+        const response = await axios.get(
+          `http://localhost:8001/present-proof-2.0/records/${param}/credentials`
+        );
+
+        const OldCredential = get().RequestedCred || [];
+        const CurrentCredential = response.data;
+        set({
+          RequestedCred: CurrentCredential,
+          loading: false,
+        }); // Update data and clear
       },
     }),
     {

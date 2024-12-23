@@ -1,97 +1,94 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import useUserStore from "../store/userStore";
 import LoadingScr from "./LoadingScr";
 
 const Navbarup = () => {
   const pathname = usePathname();
-  const { loading, isLoggedIn, role, logOut } = useUserStore();
-  // Define menu items
-  const adminMenu = [
-    { href: "/credentials", label: "Credentials" },
-    { href: "/records", label: "Credential-Records" },
-    { href: "/issuing", label: "Issue-Credentials" },
-  ];
+  const router = useRouter();
+  const { loading, isLoggedIn = false, role = "", logOut } = useUserStore();
 
-  const userMenu = [
-    { href: "/send-proposal", label: "Send Proposal" },
-    { href: "/present-proof", label: "Present Proof" },
-    { href: "/records", label: "Credential" },
-  ];
-
-  const verifierMenu = [
-    { href: "/proof-request", label: "Proof Request" },
-    { href: "/validate-proof", label: "Validate Proof" },
-  ];
+  // Define menu items for each role
+  const roleBasedMenu = {
+    admin: [
+      { href: "/credentials", label: "Credentials" },
+      { href: "/records", label: "Credential-Records" },
+      { href: "/issuing", label: "Issue-Credentials" },
+    ],
+    user: [
+      { href: "/send-proposal", label: "Send Proposal" },
+      { href: "/present-proof", label: "Present Proof" },
+      { href: "/records", label: "Credential" },
+    ],
+    verifier: [
+      { href: "/proof-request", label: "Proof Request" },
+      { href: "/validate-proof", label: "Validate Proof" },
+    ],
+  };
 
   const commonMenu = [{ href: "/connection", label: "Connection" }];
+  const menuItems = isLoggedIn
+    ? [...commonMenu, ...(roleBasedMenu[role] || [])]
+    : [];
 
-  // Combine role-specific menu items
-  let menuItems = isLoggedIn ? [...commonMenu] : [];
-  if (isLoggedIn && role === "admin") menuItems.push(...adminMenu);
-  else if (isLoggedIn && role === "user") menuItems.push(...userMenu);
-  else if (isLoggedIn && role === "verifier") menuItems.push(...verifierMenu);
-
-  // Auth menu items
-
+  // Handle logout functionality
   const handleLogout = () => {
     logOut();
     sessionStorage.removeItem("userRole");
     sessionStorage.removeItem("isLoggedIn");
-
     router.push("/login");
   };
+
+  // Utility function for dynamic link styling
+  const getNavLinkClass = (isActive) =>
+    `cursor-pointer px-3 py-2 rounded-md text-sm font-medium ${
+      isActive ? "bg-blue-600 text-white" : "hover:bg-gray-700 hover:text-white"
+    }`;
+
+  if (loading) return <LoadingScr />;
 
   return (
     <nav className="flex items-center justify-between p-3 text-white">
       {/* Left Navigation */}
-      {loading ? (
-        <LoadingScr />
-      ) : (
-        <div className="flex gap-4">
-          {menuItems.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <span
-                className={`cursor-pointer px-3 py-2 rounded-md text-sm font-medium ${
-                  pathname === item.href
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-700 hover:text-white"
-                }`}
-              >
-                {item.label}
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="flex gap-4">
+        {menuItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={getNavLinkClass(pathname === item.href)}
+            aria-current={pathname === item.href ? "page" : undefined}
+            aria-label={item.label}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
 
       {/* Right Navigation */}
       <div className="flex gap-4">
-        {/* Check if the user is logged in */}
         {isLoggedIn ? (
-          // Logout button
           <button
             onClick={handleLogout}
             className="cursor-pointer px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600"
+            aria-label="Logout"
           >
             Logout
           </button>
         ) : (
           <>
-            {/* Login button */}
             <Link
-              href={"/login"}
+              href="/login"
               className="cursor-pointer px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600"
+              aria-label="Login"
             >
               Login
             </Link>
-
-            {/* Register button */}
             <Link
-              href={"/register"}
+              href="/register"
               className="cursor-pointer px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-600"
+              aria-label="Register"
             >
               Register
             </Link>

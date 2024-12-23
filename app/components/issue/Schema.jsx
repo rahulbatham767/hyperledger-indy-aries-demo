@@ -46,17 +46,6 @@ const Schema = () => {
     // Simulate API call
     createSchema(formData);
 
-    // if (response.ok) {
-    //   toast.success("📋 Schema Created Successfully!", {
-    //     position: "top-right",
-    //     autoClose: 5000,
-    //   });
-    // } else {
-    //   toast.error("❌ Failed to create schema. Please try again.", {
-    //     position: "top-right",
-    //     autoClose: 5000,
-    //   });
-    // }
     setSchemaName("");
     setSchemaVersion("");
     setAttributes("");

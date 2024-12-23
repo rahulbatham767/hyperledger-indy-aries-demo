@@ -2,106 +2,130 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import useStore from "../store/useStore";
+import verifierStore from "../store/verifierStore";
+import { mapAttributes, ProofRequests } from "../utils/helper";
 
 const ProofRequestPage = () => {
-  const { fetchProofRequests, proofRequests, loading, error } = useStore(); // Get Zustand store data
-  const [formData, setFormData] = useState({});
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const { fetchConnection, connections, loading, error, sendProofRequest } =
+    verifierStore(); // Zustand store data
+  const [selectedConnection, setSelectedConnection] = useState(null);
+  const [requestedAttributes, setRequestedAttributes] = useState("");
+  const [requestedPredicates, setRequestedPredicates] = useState("");
 
-  // Fetch proof requests when the component mounts
+  // Fetch connections when the component mounts
   useEffect(() => {
-    fetchProofRequests();
-  }, [fetchProofRequests]);
+    fetchConnection();
+  }, [fetchConnection]);
 
-  // Handle form input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  // Handle form submission
-  const handleSubmit = (e) => {
+  // Handle proof request submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (Object.keys(formData).length === 0) {
-      toast.error("Please provide all the required information.");
+    console.log("attributes are ", requestedAttributes);
+
+    let mapAttribute;
+    // console.log("attributes are ", mapAttribute);
+    try {
+      mapAttribute = mapAttributes(JSON.parse(requestedAttributes));
+      console.log("mapAttributes are ", mapAttribute);
+      if (!selectedConnection) {
+        toast.error("Please select a connection.");
+        return;
+      }
+    } catch (error) {
+      toast.error("Invalid JSON format in requested attributes.");
       return;
     }
 
-    // Assuming that you need to submit the proof to the verifier
-    // Here you will call the appropriate API endpoint to send the proof
-    // For now, we will just show a success notification
-    toast.success("Proof submitted successfully!");
-
-    // Reset form after successful submission
-    setFormData({});
+    const proofRequestData = {
+      connection_id: selectedConnection.connection_id,
+      requested_attributes: mapAttribute,
+      requested_predicates: JSON.parse(requestedPredicates),
+    };
+    const proofTemplate = ProofRequests(proofRequestData);
+    console.log("proofTemplate for ", proofTemplate);
+    try {
+      await sendProofRequest(proofTemplate);
+      toast.success("Proof request sent successfully!");
+      setRequestedAttributes("");
+      setRequestedPredicates("");
+    } catch (error) {
+      toast.error("Failed to send proof request.");
+    }
   };
 
   return (
-    <div className="container">
-      <h2 className="text-xl font-semibold">Proof Requests</h2>
+    <div className="container mx-auto p-6 w-[30rem] shadow-md mt-3 rounded-lg">
+      <h2 className="text-xl font-semibold">Send Proof Request</h2>
 
-      {loading && <div>Loading proof requests...</div>}
-
+      {loading && <div>Loading connections...</div>}
       {error && <div className="text-red-500">Error: {error}</div>}
 
-      {/* If proof requests exist */}
-      {proofRequests?.length > 0 ? (
-        <div>
-          <h3>Select a Proof Request</h3>
-          <ul className="space-y-4">
-            {proofRequests.map((request, index) => (
-              <li
-                key={index}
-                className="cursor-pointer"
-                onClick={() => setSelectedRequest(request)}
-              >
-                <div className="border p-4 rounded">
-                  <h4>{request.name}</h4>
-                  <p>{request.verifier}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* Display the selected proof request and the form */}
-          {selectedRequest && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold">
-                Verify Information for {selectedRequest.name}
-              </h3>
-              <form onSubmit={handleSubmit}>
-                {selectedRequest.attributes.map((attr, index) => (
-                  <div key={index} className="mt-4">
-                    <label htmlFor={attr.name} className="block">
-                      {attr.name}:
-                    </label>
-                    <input
-                      type="text"
-                      id={attr.name}
-                      name={attr.name}
-                      value={formData[attr.name] || ""}
-                      onChange={handleChange}
-                      className="border p-2 rounded mt-2 w-full"
-                      required
-                    />
-                  </div>
-                ))}
-
-                <button
-                  type="submit"
-                  className="mt-6 bg-blue-500 text-white py-2 px-4 rounded"
+      {/* If connections exist */}
+      {connections?.length > 0 ? (
+        <form onSubmit={handleSubmit} className="mt-6">
+          <div className="mb-4">
+            <label className="block text-lg font-semibold">
+              Select Connection:
+            </label>
+            <select
+              value={selectedConnection?.connection_id || ""}
+              onChange={(e) =>
+                setSelectedConnection(
+                  connections.find(
+                    (conn) => conn.connection_id === e.target.value
+                  )
+                )
+              }
+              className="w-full p-2 border rounded bg-white"
+              required
+            >
+              <option value="">-- Select a connection --</option>
+              {connections.map((connection) => (
+                <option
+                  key={connection.connection_id}
+                  value={connection.connection_id}
                 >
-                  Submit Proof
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
+                  {connection.their_label} ({connection.connection_id})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-lg font-semibold">
+              Requested Attributes (JSON):
+            </label>
+            <textarea
+              value={requestedAttributes}
+              onChange={(e) => setRequestedAttributes(e.target.value)}
+              placeholder='{"name","degree"}'
+              className="w-full p-2 shadow-md rounded-md mt-2 border-cyan-200  focus-visible:outline-none h-32 bg-white"
+              required
+            ></textarea>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-lg font-semibold">
+              Requested Predicates (JSON):
+            </label>
+            <textarea
+              value={requestedPredicates}
+              onChange={(e) => setRequestedPredicates(e.target.value)}
+              placeholder='{"predicate1_referent": {"name": "age", "p_type": ">=", "p_value": 18}}'
+              className="w-full p-2 shadow-md mt-2 rounded-md border-cyan-200 border h-32 bg-white focus-visible:outline-none"
+              required
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+          >
+            Send Proof Request
+          </button>
+        </form>
       ) : (
-        <div>No proof requests available.</div>
+        <div>No connections available.</div>
       )}
     </div>
   );
