@@ -23,8 +23,6 @@ export default function Page() {
     SchemaRecord,
   } = useStore();
 
-  const parsedSchemas = parseSchemas(Schemas);
-
   // State for schema and definition details
 
   const handleSchemaChange = useCallback((e) => {
@@ -87,7 +85,7 @@ export default function Page() {
         <h1 className="text-2xl font-bold text-gray-700 mb-8">
           Credential Schema and Credential Definition
         </h1>
-        <form className="grid grid-cols-2 gap-6 w-full p-6">
+        <form className="grid lg:grid-cols-2 md:grid-cols-2  gap-6 w-full p-6">
           {/* Credential Schema Section */}
           <div className="flex flex-col items-start">
             <h2 className="text-lg font-semibold text-gray-600 mb-3">
@@ -148,13 +146,15 @@ export default function Page() {
               <option value="" disabled>
                 Select a Definition
               </option>
-              {Defination?.map(({ credential_definition_ids }, key) =>
-                credential_definition_ids?.map((def, index) => (
-                  <option key={`${key}-${index}`} value={def}>
-                    {def}
-                  </option>
-                ))
-              )}
+              {Defination &&
+                Defination.length > 0 &&
+                Defination.map(({ credential_definition_ids }, key) =>
+                  credential_definition_ids?.map((def, index) => (
+                    <option key={`${key}-${index}`} value={def}>
+                      {def}
+                    </option>
+                  ))
+                )}
             </select>
             {selectedDefinition &&
             credDefination &&

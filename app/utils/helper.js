@@ -212,3 +212,38 @@ export function ProofRequests(proof) {
   };
   return data;
 }
+export function PresentationTemplate(proof) {
+  const requestedAttributes = {};
+
+  // Ensure proof.RequestedCred is an array before using forEach
+  if (Array.isArray(proof.RequestedCred)) {
+    proof.RequestedCred.forEach((item) => {
+      item.presentation_referents.forEach((referent) => {
+        // Dynamically build the requested attributes
+        requestedAttributes[referent] = {
+          cred_id: item.cred_info.referent,
+          revealed: proof.selectedAttributes[referent] || false, // Default to false if not selected
+        };
+      });
+    });
+  } else {
+    console.error(
+      "Expected proof.RequestedCred to be an array but got",
+      typeof proof.RequestedCred
+    );
+  }
+
+  const data = {
+    auto_remove: true,
+    auto_verify: false,
+    comment: "Proof For Verification",
+    indy: {
+      requested_attributes: requestedAttributes,
+      requested_predicates: proof.RequestedCred[0]?.requested_predicates || {}, // Handle requested predicates
+      self_attested_attributes: {},
+    },
+    trace: false,
+  };
+
+  return data;
+}

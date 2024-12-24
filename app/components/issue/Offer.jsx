@@ -13,10 +13,10 @@ const Offer = () => {
   const {
     Active, // List of active relationships
     Defination, // List of credential definitions
-    getSchemaDetails,
+    getCredentialdefination,
     getDefinationLedger,
-    issueCredential,
-    Schemas, // Schema record details
+    issueingCredential,
+    SchemaRecord,
   } = useStore();
 
   const handleIssueCredential = async (e) => {
@@ -61,7 +61,7 @@ const Offer = () => {
     };
 
     console.log("Sending Data:", formData);
-    issueCredential(formData);
+    issueingCredential(formData);
 
     // Reset form
     setRelationship("");
@@ -70,13 +70,14 @@ const Offer = () => {
     setAttributes("");
   };
 
-  const parsedSchema = parseSchemas(Schemas);
-
   useEffect(() => {
     if (credentialSchema) {
       getDefinationLedger(credentialSchema);
     }
   }, [credentialSchema, getDefinationLedger]);
+  useEffect(() => {
+    getCredentialdefination();
+  }, []);
 
   return (
     <div className="flex justify-center">
@@ -114,16 +115,18 @@ const Offer = () => {
               onChange={(e) => setCredentialSchema(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded bg-white"
             >
-              <option value="">Select Credential Schema</option>
-              {parsedSchema && parsedSchema.length > 0 ? (
-                parsedSchema.map((schema, i) => (
-                  <option key={i} value={schema.id}>
-                    {schema.name}
+              <option value="">
+                {SchemaRecord
+                  ? "Select Credential Schema"
+                  : "No Credential Schema Present"}
+              </option>
+
+              {SchemaRecord &&
+                SchemaRecord.schema_ids.map((id, i) => (
+                  <option key={i} value={id}>
+                    {id}
                   </option>
-                ))
-              ) : (
-                <option value="">No Schema Present</option>
-              )}
+                ))}
             </select>
           </div>
 
@@ -138,13 +141,13 @@ const Offer = () => {
               className="w-full p-2 border border-gray-300 rounded bg-white"
             >
               <option value="">Select Credential Definition</option>
-              {Defination.map(({ credential_definition_ids }, index) =>
-                credential_definition_ids.map((item, i) => (
-                  <option key={`${index}-${i}`} value={item}>
-                    {item}
+              {Defination &&
+                Defination.credential_definition_ids.length > 0 &&
+                Defination.credential_definition_ids.map((cred, index) => (
+                  <option key={index} value={cred}>
+                    {cred}
                   </option>
-                ))
-              )}
+                ))}
             </select>
           </div>
 

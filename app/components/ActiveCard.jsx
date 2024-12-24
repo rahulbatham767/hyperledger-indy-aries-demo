@@ -11,7 +11,7 @@ const ActiveCard = ({ act, pending }) => {
     their_did,
     updated_at,
     my_did,
-    invitation_msg_id,
+    their_label,
     connection_id,
   } = act;
   const { DeleteConnection, fetchConnection } = useStore();
@@ -49,7 +49,7 @@ const ActiveCard = ({ act, pending }) => {
       </div>
 
       {/* From Section */}
-      <div className="mb-4">
+      <div className="mb-2">
         <h3 className="text-sm font-medium text-gray-600 mb-1">
           {pending ? "State:" : "My DID:"}
         </h3>
@@ -62,7 +62,7 @@ const ActiveCard = ({ act, pending }) => {
 
       {pending ? (
         <div>
-          <div className="mb-4">
+          <div className="mb-2">
             <h3 className="text-sm font-medium text-gray-600 mb-1">Alias:</h3>
             <p className="text-xs text-gray-500 break-all">{alias}</p>
 
@@ -70,16 +70,25 @@ const ActiveCard = ({ act, pending }) => {
           </div>
         </div>
       ) : (
-        <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-1">Their DID:</h3>
-          <p className="text-xs text-gray-500 break-all">{their_did}</p>
+        <div className="mb-2">
+          <div className="mb-2">
+            <h3 className="text-sm font-medium text-gray-600 mb-1">Alias:</h3>
+            <p className="text-xs text-gray-500 break-all">{their_label}</p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium text-gray-600 mb-1">
+              Their DID:
+            </h3>
+            <p className="text-xs text-gray-500 break-all">{their_did}</p>
+          </div>
         </div>
       )}
 
       {/* To Section */}
 
       {/* Last Updated */}
-      <div className="mb-4">
+      <div className="mb-2">
         <h3 className="text-sm font-medium text-gray-600 mb-1">
           Connection ID:
         </h3>

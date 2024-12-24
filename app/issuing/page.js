@@ -13,9 +13,7 @@ const Page = () => {
 
   // Fetch credential definition on component mount
   useEffect(() => {
-    if (getCredentialdefination) {
-      getCredentialdefination();
-    }
+    getCredentialdefination();
   }, [getCredentialdefination]);
 
   // Create schema only once on mount

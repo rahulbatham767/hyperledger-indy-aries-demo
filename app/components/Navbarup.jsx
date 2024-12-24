@@ -52,7 +52,7 @@ const Navbarup = () => {
   return (
     <nav className="flex items-center justify-between p-3 text-white">
       {/* Left Navigation */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 items-center">
         {menuItems.map((item) => (
           <Link
             key={item.href}

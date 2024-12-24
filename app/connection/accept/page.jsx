@@ -17,8 +17,7 @@ const page = () => {
       return;
     }
     // Process the invitation link here
-    RecieveInvitation(pastedLink);
-    toast.success("Invitation Accepted Successfully!");
+    RecieveInvitation(JSON.parse(pastedLink));
     // You can further process the invitation (e.g., send it to an API)
   };
 

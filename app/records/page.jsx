@@ -38,7 +38,7 @@ export default function resultssPage() {
           </h1>
 
           {/* Flexbox layout to allow wrapping */}
-          <div className="p-6 flex gap-3 lg:flex-nowrap  flex-wrap">
+          <div className="p-6 flex gap-3 lg:flex-nowrap flex-wrap justify-center">
             {/* Check if issuedCredentials is not found */}
             {!Array.isArray(IssuedCredentials) ? (
               // Check if issuedCredentials is not an array

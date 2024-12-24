@@ -4,27 +4,18 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { generateCredentialPayload } from "../utils/helper";
 
 const userAccess = Cookies.get("userRole"); // Retrieve the user role from cookies
 console.log("User Role:", userAccess); // Log the user role for debugging
 
-let url;
-if (userAccess === "admin") {
-  console.log("Issuer End");
-  url = "/api/issuer";
-} else if (userAccess === "verifier") {
-  console.log("Verifier End:", userAccess);
-  url = "http://localhost:8031/out-of-band";
-} else if (userAccess === "user") {
-  console.log("Holder End:", userAccess);
-  url = "/api/holder";
-} else {
-  console.log("Unknown user access type:", userAccess);
-  // Handle unknown userAccess case if needed
-}
+const API_URLS = {
+  admin: process.env.NEXT_PUBLIC_ISSUER_ENDPOINT,
+  verifier: process.env.NEXT_PUBLIC_VERIFIER_ENDPOINT,
+  user: process.env.NEXT_PUBLIC_HOLDER_ENDPOINT,
+};
 
-// Log the selected URL for debugging
-console.log("Selected URL:", url);
+const url = API_URLS[userAccess] || "";
 
 const useStore = create(
   persist(
@@ -45,8 +36,12 @@ const useStore = create(
       SchemaRecord: [],
       Defination: [],
       Message: [],
-      proofRequest: [], // Holds the proof request data
+      ProofRequests: [],
+      Presentations: [],
+      ReceieveProof: [],
       RequestedCred: [],
+      singlePresentation: [],
+      verifiedPresentation: [],
       showNotification: false, // Flag to control showing notifications
 
       // addProofRequest: (request) => {
@@ -112,7 +107,10 @@ const useStore = create(
       fetchConnection: async () => {
         set({ loading: true, error: null }); // Set loading state
         try {
-          const response = await axios.get(`${url}/connection`);
+          const response = await axios.get(`${url}/connections`, {
+            // Whether to auto-accept the connection request
+            alias: sessionStorage.getItem("userName"), // Optional: Alias for the connection
+          });
           console.log("connection response: " + response.data);
 
           const connect = response.data.results;
@@ -132,10 +130,10 @@ const useStore = create(
           });
 
           // Correct use of get to call setToast
-          get().setToast("Connections fetched successfully!", "success");
+          // toast.success("Connections fetched successfully!");
         } catch (error) {
           set({ error: error.message, loading: false });
-          get().setToast("Failed to fetch connections.", "error");
+          // toast.error("Failed to fetch connections.");
         }
       },
 
@@ -144,7 +142,7 @@ const useStore = create(
         set({ loading: true, error: null }); // Set loading state
         try {
           const response = await axios.delete(
-            `${holderEnd}/connections/${invi_msg_id}`
+            `${url}/connections/${invi_msg_id}`
           );
 
           console.log("connection response: " + response.data);
@@ -154,10 +152,10 @@ const useStore = create(
           });
 
           // Correct use of get to call setToast
-          get().setToast("Connection deleted successfully", "success");
+          // toast.success("Connection deleted successfully");
         } catch (error) {
           set({ error: error.message, loading: false });
-          get().setToast("Failed to delete connection.", "error");
+          // toast.error("Failed to delete connection.", error.message);
         }
       },
 
@@ -165,10 +163,14 @@ const useStore = create(
       createInvitation: async () => {
         set({ loading: true, error: null });
         try {
-          const Alias = "Faber";
-          const response = await axios.post(`${url}/create-invitation`, {
-            Alias,
-          });
+          const Alias = sessionStorage.getItem("userName");
+          const response = await axios.post(
+            `${url}/out-of-band/create-invitation`,
+            {
+              Alias,
+              handshake_protocols: ["https://didcomm.org/didexchange/1.0"],
+            }
+          );
           console.log("Invitation response:", response.data);
 
           set({
@@ -177,13 +179,13 @@ const useStore = create(
           });
 
           // Correct use of get to call setToast
-          toast.success("🔗 Invitation Link Generated Successfully", {
-            position: "top-right",
-            autoClose: 5000,
-          });
+          // toast.success("🔗 Invitation Link Generated Successfully", {
+          //   position: "top-right",
+          //   autoClose: 5000,
+          // });
         } catch (error) {
           set({ error: error.message, loading: false });
-          toast("Failed to create invitation.", "error");
+          // toast("Failed to create invitation.", "error");
         }
       },
 
@@ -191,9 +193,11 @@ const useStore = create(
         set({ loading: true, error: null });
         console.log("received Invitation" + url);
         try {
-          const response = await axios.post(`${url}/receive-invitation`, {
-            invitation: data,
-          });
+          const response = await axios.post(
+            `${url}/out-of-band/receive-invitation`,
+
+            data
+          );
           console.log("data in store" + data);
           // const newInvitation = response.data;
           set({
@@ -201,7 +205,7 @@ const useStore = create(
             loading: false,
           });
 
-          toast.success("Invitation Accepted Successfully");
+          // toast.success("Invitation Accepted Successfully");
           const router = useRouter();
           router.push("/connection/accept");
         } catch (error) {
@@ -214,30 +218,28 @@ const useStore = create(
         set({ loading: true, error: null });
         console.log("data in create schema", data);
         try {
-          const response = await axios.post(`${url}/create-schema`, { data });
+          const response = await axios.post(`${url}/schemas`, data);
           const newSchema = response.data;
-          toast.success("Schema Created Successfully ");
-          const currentSchema = get().Schemas || [];
+          // toast.success("Schema Created Successfully ");
           set({
-            Schemas: [...currentSchema, newSchema],
+            Schemas: newSchema,
             loading: false,
           });
 
           // Correct use of get to call setToast
         } catch (error) {
-          toast.error("Failed to Create Schema " + error?.message);
+          // toast.error("Failed to Create Schema " + error?.message);
           set({ error: error.message, loading: false });
         }
       },
       // Get Schema
-      getSchema: async (data) => {
+      getSchema: async () => {
         set({ loading: true, error: null });
-        console.log(data);
 
         try {
-          const response = await axios.get(`${url}/create-schema`);
+          const response = await axios.get(`${url}/schemas/created`);
           const Schema_record = response.data;
-
+          // toast.success("Schema Fetched Successfully");
           set({
             SchemaRecord: Schema_record,
             loading: false,
@@ -245,6 +247,7 @@ const useStore = create(
 
           // Correct use of get to call setToast
         } catch (error) {
+          // toast.error("Failed To Fetched Schema", error.message);
           set({ error: error.message, loading: false });
         }
       },
@@ -254,15 +257,14 @@ const useStore = create(
         const schema_id = encodeURIComponent(data);
         console.log("schema_id", schema_id);
         try {
-          const response = await axios.get(`${url}/create-schema`, {
-            params: { schema_id: schema_id }, // Use params to pass query parameters
-          });
+          const response = await axios.get(`${url}/schemas/${data}`);
 
           if (response && response.data) {
             const Schema_record = response.data;
 
             // Ensure the response is not empty before updating state
             if (Object.keys(Schema_record).length === 0) {
+              toast.error("Received empty schema data");
               throw new Error("Received empty schema data");
             }
             set({
@@ -270,32 +272,33 @@ const useStore = create(
               loading: false,
             });
           } else {
+            toast.error("Received invalid or empty response");
             throw new Error("Received invalid or empty response");
           }
+          toast.success("Schema Fetched Successfully");
           // Correct use of get to call setToast
         } catch (error) {
+          toast.error("Failed to Fetch Schema");
           set({ error: error.message, loading: false });
         }
       },
       credentialDefination: async (issuer, get) => {
         set({ loading: true, error: null });
-        console.log("zukeeper " + issuer);
+        console.log("credential Defination ", issuer);
         try {
-          const response = await axios.post(`${url}/credential-defination`, {
-            issuer,
-          });
-          toast.success("Credential Defination Created Successfully ");
+          const response = await axios.post(
+            `${url}/credential-definitions`,
+            issuer
+          );
+          // toast.success("Credential Defination Created Successfully ");
 
-          const CredentialDefinations = get.Defination() || [];
-          const CurrentDefination = response.data;
           set({
-            Defination: [...CredentialDefinations, CurrentDefination],
             loading: false,
           }); // Update data and clear loading
         } catch (error) {
-          toast.success(
-            "Failed to create Credential Defination" + error?.message
-          );
+          // toast.success(
+          //   "Failed to create Credential Defination " + error?.message
+          // );
 
           set({ error: error.message, loading: false }); // Update error state and clear loading
         }
@@ -303,15 +306,13 @@ const useStore = create(
       getCredentialdefination: async (get) => {
         set({ loading: true, error: null });
         try {
-          const response = await axios.get(`${url}/credential-defination`, {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+          const response = await axios.get(
+            `${url}/credential-definitions/created`
+          );
           const credentialDefinition = response.data;
           console.log(credentialDefinition);
           set({
-            Defination: [credentialDefinition],
+            Defination: credentialDefinition,
             loading: false,
           }); // Update data and clear loading
         } catch (error) {
@@ -323,7 +324,7 @@ const useStore = create(
         try {
           const encodedData = encodeURIComponent(data); // Ensure data is encoded properly
           const response = await axios.get(
-            `${url}/credential-defination?cred_def_id=${encodedData}`, // Correct query parameter format
+            `${url}/credential-defination/${encodedData}`, // Correct query parameter format
             {
               headers: {
                 "Content-Type": "application/json",
@@ -341,18 +342,23 @@ const useStore = create(
         }
       },
 
-      issueCredential: async (formData, get) => {
+      issueingCredential: async (formData) => {
         set({ loading: true, error: null });
-        console.log("issue cred in store " + formData);
+        console.log("issue cred in store ", formData);
+
+        const payload = generateCredentialPayload(formData);
+        console.log("Payload is", JSON.stringify(payload));
+
         try {
-          const response = await axios.post(`${url}/credential-send`, {
-            formData,
-          });
-          toast.success("Credenntial Issued Successfully");
-          const issuedCredential = get().IssueCredentials || [];
+          const response = await axios.post(
+            `${url}/issue-credential-2.0/send`,
+
+            payload
+          );
+          toast.success("Credential Issued Successfully");
           const CurrentCredential = response.data;
           set({
-            issueCredential: [...issuedCredential, CurrentCredential],
+            IssuedCredentials: CurrentCredential,
             loading: false,
           }); // Update data and clear loading
         } catch (error) {
@@ -363,26 +369,41 @@ const useStore = create(
       credentialRecords: async () => {
         set({ loading: true, error: null });
         try {
-          const response = await axios.get(` ${url}/credential`);
+          const response = await axios.get(` ${url}/credentials`);
 
           const CurrentCredential = response.data.results;
           console.log("CurrentCredential  is", CurrentCredential);
+          // toast.success("Credenntial Fetched Successfully");
           set({
             IssuedCredentials: CurrentCredential,
             loading: false,
           }); // Update data and clear loading
         } catch (error) {
+          // toast.error("Failed to Fetch Credential");
+
           set({ error: error.message, loading: false }); // Update error state and clear loading
         }
       },
       message: async (content, param) => {
         set({ loading: true, error: null });
         console.log(content, param);
+        if (!param || !content) {
+          toast.error("Connection ID and message content are required.");
+          throw new Error(
+            { error: "Connection ID and message content are required." },
+            { status: 400 }
+          );
+        }
         try {
-          const response = await axios.post(`${url}/message`, {
-            content,
-            param,
-          });
+          const response = await axios.post(
+            `${url}/connections/${param}/send-message`, // ACA-Py Agent API URL
+            { content }, // Message content payload
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
           const oldMessage = get().Message || [];
           const CurrentMessage = response.data;
           set({ Message: [...oldMessage, CurrentMessage], loading: false }); // Update data and clear loading
@@ -392,22 +413,30 @@ const useStore = create(
       },
       fetchProofRequest: async () => {
         set({ loading: true, error: null });
-        const response = await axios.get(
-          "http://localhost:8001/present-proof-2.0/records"
-        );
+        const response = await axios.get(`${url}/present-proof-2.0/records`);
 
         console.log(response.data);
 
         const currentproof = response.data.results;
+        const receiveProof = currentproof.filter(
+          (proof) => proof.state === "presentation-received"
+        );
+        const presentationProof = currentproof.filter(
+          (proof) => proof.state == "presentation-sent"
+        );
+
         set({
           proofRequest: currentproof,
+          ReceieveProof: receiveProof,
+          Presentation: presentationProof,
+
           loading: false,
         }); // Update data and clear
       },
       fetchRequestedCred: async (param) => {
         set({ loading: true, error: null });
         const response = await axios.get(
-          `http://localhost:8001/present-proof-2.0/records/${param}/credentials`
+          `${url}/present-proof-2.0/records/${param}/credentials`
         );
 
         const OldCredential = get().RequestedCred || [];
@@ -416,6 +445,85 @@ const useStore = create(
           RequestedCred: CurrentCredential,
           loading: false,
         }); // Update data and clear
+      },
+      sendProofRequest: async (data) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await axios.post(
+            `${url}/present-proof-2.0/send-request`,
+            data
+          );
+          console.log("Proof request sent: ", response.data);
+
+          set({
+            ProofRequests: response.data,
+            loading: false,
+          });
+          toast.success("Proof request sent successfully");
+        } catch (error) {
+          set({ error: error.message, loading: false });
+          toast.success("Failed to sent proof request", error.message);
+        }
+      },
+      sendPresentation: async (data, id) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await axios.post(
+            `${url}/present-proof-2.0/records/${id}/send-presentation`,
+            data
+          );
+          console.log("Proof request sent: ", response.data);
+
+          set({
+            Presentation: response.data,
+            loading: false,
+          });
+          toast.success("Proof request sent successfully");
+        } catch (error) {
+          set({ error: error.message, loading: false });
+          toast.success("Failed to sent proof request", error.message);
+        }
+      },
+      fetchSinglePresentation: async (id) => {
+        console.log("single id ", id);
+
+        const cred = id.replace(/"/g, ""); // Remove all double quotes
+
+        set({ loading: true, error: null });
+
+        try {
+          const response = await axios.get(
+            `${url}/present-proof-2.0/records/${cred}`
+          );
+
+          set({
+            singlePresentation: response.data,
+            loading: false,
+          });
+          toast.success("Proof Fetched successfully");
+        } catch (error) {
+          set({ error: error.message, loading: false });
+          toast.success("Failed to sent proof request", error.message);
+        }
+      },
+      verifyPresentation: async (presentationId) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await axios.post(
+            `${url}/present-proof-2.0/records/${presentationId}/verify-presentation`
+          );
+          const CurrentVerified = response.data;
+          const OldVerified = [...get().verifiedPresentation];
+          console.log("Presentation verified: ", response.data);
+          set({
+            loading: false,
+            verifiedPresentation: [OldVerified, CurrentVerified],
+          });
+          toast("✔ Presentation verified successfully");
+        } catch (error) {
+          set({ error: error.message, loading: false });
+          toast.error(" Failed to verify Presentation");
+        }
       },
     }),
     {

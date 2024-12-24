@@ -31,6 +31,7 @@ const useUserStore = create(
               loading: false,
             });
             sessionStorage.setItem("userRole", userData.data.role);
+            sessionStorage.setItem("userName", userData.data.user.name);
             // Use Next.js useRouter for navigation
             const router = useRouter();
             router.push("/connection");
@@ -79,11 +80,6 @@ const useUserStore = create(
           error: null,
           message: message,
         });
-
-        sessionStorage.removeItem("userRole"); // Clear sessionStorage on logout
-
-        const router = useRouter();
-        router.push("/login");
       },
 
       setUser: (user, token) =>

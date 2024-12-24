@@ -19,36 +19,62 @@ const Schema = () => {
 
   // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submission
-    let parsedAttributes = [];
+    e.preventDefault();
 
+    if (!schemaName.trim() || !schemaVersion.trim()) {
+      toast.error("Schema Name and Version are required fields.", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+      return;
+    }
+
+    let parsedAttributes;
     if (attributes.trim() && isValidJsonArray(attributes)) {
-      parsedAttributes = JSON.parse(attributes); // Parse attributes JSON string into an array
+      try {
+        parsedAttributes = JSON.parse(attributes); // Parse attributes JSON string into an array
+        console.log("Parsed Attributes:", parsedAttributes);
+      } catch (error) {
+        console.error("JSON parsing error:", error);
+        toast.error("Invalid JSON array format. Please check your input.", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        return;
+      }
     } else {
       toast.error(
         "Invalid JSON array format for attributes. Please try again.",
-        {
-          position: "top-right",
-          autoClose: 5000,
-        }
+        { position: "top-right", autoClose: 5000 }
       );
       return;
     }
 
     const formData = {
-      schema_name: schemaName,
-      schema_version: schemaVersion,
+      schema_name: schemaName.trim(),
+      schema_version: schemaVersion.trim(),
       attributes: parsedAttributes,
     };
 
     console.log("Form Data:", formData);
 
-    // Simulate API call
-    createSchema(formData);
-
-    setSchemaName("");
-    setSchemaVersion("");
-    setAttributes("");
+    try {
+      await createSchema(formData); // API call
+      toast.success("Schema created successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    } catch (error) {
+      console.error("Error creating schema:", error);
+      toast.error("Failed to create schema. Please try again.", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    } finally {
+      setSchemaName("");
+      setSchemaVersion("");
+      setAttributes("");
+    }
   };
 
   return (

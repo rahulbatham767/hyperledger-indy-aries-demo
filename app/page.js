@@ -8,21 +8,37 @@ import useStore from "./store/useStore";
 
 export default function Home() {
   const { user } = useUserStore(); // Get the action to add proof requests
-  const { Active, IssuedCredentials } = useStore();
+  const {
+    Active,
+    IssuedCredentials,
+    getCredentialdefination,
+    getSchema,
+    credentialRecords,
+    fetchConnection,
+    fetchProofRequest,
+  } = useStore();
+
+  useEffect(() => {
+    getCredentialdefination();
+    getSchema();
+    credentialRecords();
+    fetchConnection();
+    fetchProofRequest();
+  }, []);
 
   return (
     <div className="flex items-center justify-center my-5">
       {/* Flex container to align image and text side by side */}
       <div className="flex items-center justify-center space-x-16 w-full max-w-screen-xl px-6">
         {/* Image Section */}
-        <div className="w-1/3">
+        <div className="lg:w-full  hidden">
           <Image src={Hyperledger} width={300} height={300} alt="Hyperledger" />
         </div>
 
         {/* Text Section */}
         <div className="w-2/3 text-left space-y-6">
           {/* Main Headline */}
-          <h3 className="text-6xl font-extrabold text-gray-800">
+          <h3 className="lg:text-6xl text-3xl  font-extrabold text-gray-800">
             Welcome {user ? user.name : "User"} to Open Wallet
           </h3>
 

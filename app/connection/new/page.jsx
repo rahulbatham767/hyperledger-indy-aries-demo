@@ -74,10 +74,8 @@ const Page = () => {
               onClick={copyText}
               aria-label="Click to Copy Invitation Link"
             >
-              {Invitation?.invite?.invitation ? (
-                <pre>
-                  {JSON.stringify(Invitation.invite.invitation, null, 2)}
-                </pre>
+              {Invitation?.invitation ? (
+                <pre>{JSON.stringify(Invitation?.invitation, null, 2)}</pre>
               ) : (
                 <p className="text-gray-500">
                   Click Create New Invitation to generate an Invitation Object.
