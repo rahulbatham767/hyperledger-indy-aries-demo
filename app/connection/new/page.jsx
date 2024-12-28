@@ -8,13 +8,16 @@ import LoadingScr from "@/app/components/LoadingScr"; // Custom loading spinner 
 
 const Page = () => {
   const [did, setDid] = useState("");
-  const { loading, createInvitation, Invitation } = useStore();
+  const { loading, createInvitation, Invitation, successStatus } = useStore();
 
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
     createInvitation();
+    if (successStatus) {
+      toast.success("Invitation Generated Successfully!");
+    }
   };
 
   // Copy text to clipboard

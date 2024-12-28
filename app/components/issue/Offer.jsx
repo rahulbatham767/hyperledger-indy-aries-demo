@@ -1,6 +1,6 @@
 "use client";
 import useStore from "@/app/store/useStore";
-import { parseSchemas } from "@/app/utils/helper";
+import { issueAttributes } from "@/app/utils/helper";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -10,13 +10,20 @@ const Offer = () => {
   const [credentialDefinition, setCredentialDefinition] = useState("");
   const [attributes, setAttributes] = useState("");
 
+  // Local states for store data
+  const [activeRelationships, setActiveRelationships] = useState([]);
+  const [definitions, setDefinitions] = useState([]);
+  const [schemaRecord, setSchemaRecord] = useState([]);
+  const [schemaDetails, setSchemaDetails] = useState(null);
+
   const {
-    Active, // List of active relationships
-    Defination, // List of credential definitions
-    getCredentialdefination,
-    getDefinationLedger,
+    Active,
+    Defination,
+    getSchemaDetails,
+    SchemaDetails,
     issueingCredential,
     SchemaRecord,
+    getCredentialdefination,
   } = useStore();
 
   const handleIssueCredential = async (e) => {
@@ -35,9 +42,14 @@ const Offer = () => {
       return;
     }
 
-    let parsedAttributes;
+    let parsedAttributes, mapping;
     try {
-      parsedAttributes = JSON.parse(attributes);
+      const parsed = JSON.parse(attributes);
+      parsedAttributes = schemaDetails?.attrNames.map((key, index) => ({
+        [key]: parsed[index],
+      }));
+      mapping = issueAttributes(parsedAttributes);
+
       if (!Array.isArray(parsedAttributes)) throw new Error();
     } catch {
       toast.error(
@@ -50,41 +62,36 @@ const Offer = () => {
       return;
     }
 
-    const issuer_did = credentialSchema.split(":")[0]; // Extract issuer DID
+    const issuer_did = credentialSchema.split(":")[0];
     const formData = {
       connection_id: relationship,
       schema_id: credentialSchema,
       issuer_did: issuer_did,
       schema_issuer_did: issuer_did,
       cred_def_id: credentialDefinition,
-      attributes: parsedAttributes,
+      attributes: mapping,
     };
 
-    console.log("Sending Data:", formData);
     issueingCredential(formData);
 
-    // Reset form
     setRelationship("");
     setCredentialSchema("");
     setCredentialDefinition("");
     setAttributes("");
   };
 
+  // Fetch data and store in local states
   useEffect(() => {
-    if (credentialSchema) {
-      getDefinationLedger(credentialSchema);
-    }
-  }, [credentialSchema, getDefinationLedger]);
-  useEffect(() => {
-    getCredentialdefination();
-  }, []);
+    setActiveRelationships(Active || []);
+    setDefinitions(Defination?.credential_definition_ids || []);
+    setSchemaRecord(SchemaRecord?.schema_ids || []);
+    setSchemaDetails(SchemaDetails || null);
+  }, [Active, Defination, SchemaRecord, SchemaDetails]);
 
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-3xl bg-white p-6">
-        <h3 className="text-2xl font-bold text-center mb-6">
-          Send Credential Offer
-        </h3>
+        <h3 className="text-2xl font-bold text-center mb-6">Credential</h3>
         <form onSubmit={handleIssueCredential}>
           {/* Relationship Field */}
           <div className="mb-4">
@@ -97,9 +104,9 @@ const Offer = () => {
               className="w-full p-2 border border-gray-300 bg-white rounded"
             >
               <option value="">Select Relationship</option>
-              {Active.map((active, i) => (
+              {activeRelationships.map((active, i) => (
                 <option key={i} value={active.connection_id}>
-                  {active.alias}:{active.their_did}
+                  {active.their_label}:{active.their_did}
                 </option>
               ))}
             </select>
@@ -112,26 +119,50 @@ const Offer = () => {
             </label>
             <select
               value={credentialSchema}
-              onChange={(e) => setCredentialSchema(e.target.value)}
+              onChange={(e) => {
+                setCredentialSchema(e.target.value);
+                getCredentialdefination(e.target.value);
+                getSchemaDetails(e.target.value);
+              }}
               className="w-full p-2 border border-gray-300 rounded bg-white"
             >
               <option value="">
-                {SchemaRecord
+                {schemaRecord.length > 0
                   ? "Select Credential Schema"
                   : "No Credential Schema Present"}
               </option>
-
-              {SchemaRecord &&
-                SchemaRecord.schema_ids.map((id, i) => (
-                  <option key={i} value={id}>
-                    {id}
-                  </option>
-                ))}
+              {schemaRecord.map((id, i) => (
+                <option key={i} value={id}>
+                  {id}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Schema Attributes */}
+          {credentialSchema && schemaDetails && (
+            <div className="mt-4 p-3 border border-gray-200 bg-gray-100 rounded-md w-full shadow-sm">
+              <p className="text-sm text-gray-500">
+                <strong>Name:</strong> {schemaDetails.name || "N/A"}
+              </p>
+              <p className="text-sm text-gray-500">
+                <strong>Version:</strong> {schemaDetails.version || "N/A"}
+              </p>
+              <p className="text-sm text-gray-500">
+                <strong>Id:</strong> {schemaDetails.id || "N/A"}
+              </p>
+              <p className="text-sm text-gray-500">
+                <strong>Attributes:</strong>{" "}
+                {Array.isArray(schemaDetails?.attrNames) &&
+                schemaDetails?.attrNames.length > 0
+                  ? schemaDetails.attrNames.join(", ")
+                  : "No attributes available"}
+              </p>
+            </div>
+          )}
+
           {/* Credential Definition Field */}
-          <div className="mb-4">
+          <div className="mb-4 mt-3">
             <label className="block text-sm font-medium mb-2">
               Credential Definition:
             </label>
@@ -141,13 +172,11 @@ const Offer = () => {
               className="w-full p-2 border border-gray-300 rounded bg-white"
             >
               <option value="">Select Credential Definition</option>
-              {Defination &&
-                Defination.credential_definition_ids.length > 0 &&
-                Defination.credential_definition_ids.map((cred, index) => (
-                  <option key={index} value={cred}>
-                    {cred}
-                  </option>
-                ))}
+              {definitions.map((cred, index) => (
+                <option key={index} value={cred}>
+                  {cred}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -157,7 +186,7 @@ const Offer = () => {
               Attributes (JSON Format):
             </label>
             <textarea
-              placeholder='[{"key": "value"}, {"key2": "value2"}]'
+              placeholder='["rahul","XX4170"]'
               value={attributes}
               onChange={(e) => setAttributes(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded resize-none h-32 bg-white"

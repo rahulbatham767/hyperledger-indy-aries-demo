@@ -9,9 +9,7 @@ import ActiveCard from "@/app/components/ActiveCard";
 const page = () => {
   const { fetchConnection, Pending, loading } = useStore();
   const [PendingLoading, setPendingLoading] = useState(true);
-  useEffect(() => {
-    fetchConnection();
-  }, []);
+   
 
   useEffect(() => {
     if (Pending) {

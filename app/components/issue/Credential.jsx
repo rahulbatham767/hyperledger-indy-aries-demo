@@ -3,21 +3,26 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify"; // Import toast from react-toastify
 import "react-toastify/dist/ReactToastify.css"; // Import toast styles
 import useStore from "@/app/store/useStore";
-import { parseSchemas } from "@/app/utils/helper";
 
 const Credentials = () => {
-  // State management
+  // Local state for managing form inputs
   const [schemaName, setSchemaName] = useState("");
   const [schemaVersion, setSchemaVersion] = useState("");
   const [tag, setTag] = useState("");
+
+  // Local state for fetched data
+  const [schemaList, setSchemaList] = useState([]);
+  const [schemaDetails, setSchemaDetails] = useState(null);
+
   const {
     credentialDefination,
     SchemaRecord,
     SchemaDetails,
     getSchema,
     getSchemaDetails,
+    successStatus,
   } = useStore();
-  console.log("Schema Record", SchemaRecord.schema_ids);
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent default form submission
@@ -34,19 +39,44 @@ const Credentials = () => {
     const formData = {
       schema_id: schemaName,
       tag: tag,
-      schema_version: schemaVersion, // Add schema version to formData
+      schema_version: schemaVersion,
     };
 
     console.log("Form Data:", formData);
     credentialDefination(formData);
-    setSchemaName("");
-    setSchemaVersion("");
-    setTag("");
+    if (successStatus) {
+      toast.success("Credential Definition created successfully!");
+      setSchemaName("");
+      setSchemaVersion("");
+      setTag("");
+    } else {
+      toast.error("Failed to create Credential Definition!");
+    }
   };
 
+  // Fetch schemas from the store and store them in local state
   useEffect(() => {
     getSchema();
   }, []);
+
+  useEffect(() => {
+    if (SchemaRecord && SchemaRecord.schema_ids) {
+      setSchemaList(SchemaRecord.schema_ids);
+    }
+  }, [SchemaRecord]);
+
+  // Fetch schema details when a schema is selected
+  const handleSchemaChange = (value) => {
+    setSchemaName(value);
+    getSchemaDetails(value);
+  };
+
+  useEffect(() => {
+    if (SchemaDetails) {
+      setSchemaDetails(SchemaDetails);
+    }
+  }, [SchemaDetails]);
+
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-lg bg-white p-6">
@@ -61,24 +91,19 @@ const Credentials = () => {
             </label>
             <select
               value={schemaName}
-              onChange={(e) => {
-                setSchemaName(e.target.value);
-                getSchemaDetails(e.target.value);
-              }}
-              className="border-gray-300 rounded-md bg-white w-full p-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(e) => handleSchemaChange(e.target.value)}
+              className="border-gray-200 border shadow-sm rounded-md bg-white w-full p-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              {console.log(SchemaRecord.schema_ids)}
               <option value="" disabled>
-                {SchemaRecord
-                  ? "   Select a Schema Name"
+                {schemaList.length > 0
+                  ? "Select a Schema Name"
                   : "No Available Schema"}
               </option>
-              {SchemaRecord &&
-                SchemaRecord.schema_ids.map((schema, id) => (
-                  <option key={id} value={schema}>
-                    {schema}
-                  </option>
-                ))}
+              {schemaList.map((schema, id) => (
+                <option key={id} value={schema}>
+                  {schema}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -90,14 +115,14 @@ const Credentials = () => {
             <select
               value={schemaVersion}
               onChange={(e) => setSchemaVersion(e.target.value)}
-              className="border-gray-300 bg-white rounded-md w-full p-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border-gray-200 border shadow-sm bg-white rounded-md w-full p-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="" disabled>
                 Select a Schema Version
               </option>
-              {SchemaDetails ? (
-                <option value={SchemaDetails.version}>
-                  {SchemaDetails.version}
+              {schemaDetails ? (
+                <option value={schemaDetails.version}>
+                  {schemaDetails.version}
                 </option>
               ) : (
                 <option value="no-schema-version" disabled>
@@ -115,7 +140,7 @@ const Credentials = () => {
               placeholder="Enter tag"
               value={tag}
               onChange={(e) => setTag(e.target.value)}
-              className="border-gray-300 rounded-md w-full p-2 bg-white focus:ring-blue-500 focus:border-blue-500"
+              className="border-gray-200 border shadow-sm rounded-md w-full p-2 bg-white focus:ring-blue-500 focus:border-blue-500 h-28"
             />
           </div>
 

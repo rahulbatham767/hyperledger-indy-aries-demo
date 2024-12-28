@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import useStore from "@/app/store/useStore";
 import {
   getValueBeforeColon,
+  issueAttributes,
   isValidJsonArray,
   parseSchemas,
 } from "@/app/utils/helper";
@@ -30,7 +31,9 @@ const Offer = () => {
     Active,
     Defination,
     getSchemaDetails,
-    getDefinationLedger,
+    getSchema,
+    getCredentialdefination,
+    // getDefinationLedger,
     issueCredential,
     credDefination,
     SchemaRecord,
@@ -54,16 +57,16 @@ const Offer = () => {
       );
       return;
     }
-    console.log("attributes in offer " + attributes);
-    // Form Data
+
     const issuer_did = getValueBeforeColon(credentialSchema);
+    const parsedAttr = issueAttributes(parsedAttributes);
     const formData = {
       connection_id: relationship,
       //   schema_id: credentialSchema,
       issuer_did: issuer_did,
       //   schema_issuer_did: issuer_did,
       cred_def_id: credentialDefinition,
-      attributes: JSON.parse(attributes || "{}"), // Parse JSON string
+      attributes: parsedAttr || "{}", // Parse JSON string
     };
 
     console.log("Sending Data:", formData);
@@ -77,9 +80,9 @@ const Offer = () => {
   };
 
   useEffect(() => {
-    getDefinationLedger(credentialSchema);
-  }, [credentialSchema]);
-
+    getCredentialdefination();
+    getSchema();
+  }, []);
   console.log(SchemaRecord.schema_ids);
   return (
     <div className="flex justify-center">
@@ -103,7 +106,7 @@ const Offer = () => {
               <SelectContent>
                 {Active.map((active, i) => (
                   <SelectItem key={i} value={active.connection_id}>
-                    {active.alias}:{active.their_did}
+                    {active.their_label}:{active.their_did}
                   </SelectItem>
                 ))}{" "}
               </SelectContent>
@@ -113,52 +116,24 @@ const Offer = () => {
           {/* Credential Schema Field */}
           <FormItem className="mt-4">
             <FormLabel>Credential Schema:</FormLabel>
-            <Select
-              value={credentialSchema}
-              onValueChange={(value) => {
-                getDefinationLedger(value);
-                setCredentialSchema(value);
-              }}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Credential Schema" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {SchemaRecord.schema_ids.map((schema, i) => (
-                  <SelectItem key={i} value={schema}>
-                    {schema}
-                  </SelectItem>
-                ))}{" "}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <Input
+                placeholder="Enter Credential Schema"
+                value={credentialSchema}
+                onChange={(e) => setCredentialSchema(e.target.value)}
+              />
+            </FormControl>
           </FormItem>
-
           {/* Credential Definition Field */}
           <FormItem className="mt-4">
             <FormLabel>Credential Definition:</FormLabel>
-            <Select
-              value={credentialDefinition}
-              onValueChange={(value) => {
-                setCredentialDefinition(value);
-              }}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Credential Definition" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {Defination.map(({ credential_definition_ids }, index) =>
-                  credential_definition_ids.map((item, i) => (
-                    <SelectItem key={index + i} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+            <FormControl>
+              <Input
+                placeholder="Enter Credential Definition"
+                value={credentialDefinition}
+                onChange={(e) => setCredentialDefinition(e.target.value)}
+              />
+            </FormControl>
           </FormItem>
 
           {/* Attributes Field */}

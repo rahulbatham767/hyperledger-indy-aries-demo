@@ -2,8 +2,7 @@
 import { useEffect } from "react";
 import useUserStore from "./store/userStore";
 import Image from "next/image";
-import Hyperledger from "./hyperleger.png"; // Adjusted import statement
-import useHolder from "./store/holderStore";
+import Hyperledger from "./hyperleger.png";
 import useStore from "./store/useStore";
 
 export default function Home() {
@@ -31,14 +30,14 @@ export default function Home() {
       {/* Flex container to align image and text side by side */}
       <div className="flex items-center justify-center space-x-16 w-full max-w-screen-xl px-6">
         {/* Image Section */}
-        <div className="lg:w-full  hidden">
+        <div className="lg:w-full hidden">
           <Image src={Hyperledger} width={300} height={300} alt="Hyperledger" />
         </div>
 
         {/* Text Section */}
         <div className="w-2/3 text-left space-y-6">
           {/* Main Headline */}
-          <h3 className="lg:text-6xl text-3xl  font-extrabold text-gray-800">
+          <h3 className="lg:text-6xl text-3xl font-extrabold text-gray-800">
             Welcome {user ? user.name : "User"} to Open Wallet
           </h3>
 
@@ -53,7 +52,9 @@ export default function Home() {
               <span className="text-xl font-semibold text-gray-700">
                 Active Connection:
               </span>
-              <span className="text-xl text-green-600">{Active.length}</span>
+              <span className="text-xl text-green-600">
+                {Active.length || 0}
+              </span>
             </div>
 
             <div className="flex justify-between items-center">
@@ -61,7 +62,7 @@ export default function Home() {
                 Credential:
               </span>
               <span className="text-xl text-blue-600">
-                {IssuedCredentials.length}
+                {IssuedCredentials?.length ?? 0}
               </span>
             </div>
           </div>

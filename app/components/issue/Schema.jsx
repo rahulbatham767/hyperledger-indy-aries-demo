@@ -14,7 +14,7 @@ const Schema = () => {
   const [schemaName, setSchemaName] = useState("");
   const [schemaVersion, setSchemaVersion] = useState("");
   const [attributes, setAttributes] = useState("");
-  const { createSchema } = useStore();
+  const { createSchema, successStatus, getSchema } = useStore();
   // Function to validate if a string is a valid JSON array
 
   // Handle form submission
@@ -22,10 +22,7 @@ const Schema = () => {
     e.preventDefault();
 
     if (!schemaName.trim() || !schemaVersion.trim()) {
-      toast.error("Schema Name and Version are required fields.", {
-        position: "top-right",
-        autoClose: 5000,
-      });
+      toast.error("Schema Name and Version are required fields.");
       return;
     }
 
@@ -36,16 +33,12 @@ const Schema = () => {
         console.log("Parsed Attributes:", parsedAttributes);
       } catch (error) {
         console.error("JSON parsing error:", error);
-        toast.error("Invalid JSON array format. Please check your input.", {
-          position: "top-right",
-          autoClose: 5000,
-        });
+        toast.error("Invalid JSON array format. Please check your input.");
         return;
       }
     } else {
       toast.error(
-        "Invalid JSON array format for attributes. Please try again.",
-        { position: "top-right", autoClose: 5000 }
+        "Invalid JSON array format for attributes. Please try again."
       );
       return;
     }
@@ -58,23 +51,18 @@ const Schema = () => {
 
     console.log("Form Data:", formData);
 
-    try {
-      await createSchema(formData); // API call
-      toast.success("Schema created successfully!", {
-        position: "top-right",
-        autoClose: 5000,
-      });
-    } catch (error) {
-      console.error("Error creating schema:", error);
-      toast.error("Failed to create schema. Please try again.", {
-        position: "top-right",
-        autoClose: 5000,
-      });
-    } finally {
-      setSchemaName("");
-      setSchemaVersion("");
-      setAttributes("");
-    }
+    createSchema(formData).then(() => {
+      getSchema();
+      if (successStatus) {
+        toast.success("Schema created successfully!", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+        setSchemaName("");
+        setSchemaVersion("");
+        setAttributes("");
+      }
+    });
   };
 
   return (

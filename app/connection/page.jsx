@@ -4,13 +4,10 @@ import useStore from "@/app/store/useStore";
 import React, { useEffect } from "react";
 
 const page = () => {
-  const { fetchConnection, Active } = useStore();
+  const { Active } = useStore();
 
-  console.log("In Active State " + Active);
   const pending = false;
-  // useEffect(() => {
-  //   fetchConnection();
-  // }, []);
+
   return (
     <div className="flex flex-wrap">
       {Active &&

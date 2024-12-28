@@ -9,19 +9,13 @@ const Offer = React.lazy(() => import("../components/issue/Offer"));
 const Credentials = React.lazy(() => import("../components/issue/Credential"));
 
 const Page = () => {
-  const { getCredentialdefination, loading, createSchema } = useStore();
+  const { getCredentialdefination, getSchema } = useStore();
 
   // Fetch credential definition on component mount
   useEffect(() => {
     getCredentialdefination();
+    getSchema();
   }, [getCredentialdefination]);
-
-  // Create schema only once on mount
-  useEffect(() => {
-    if (createSchema) {
-      createSchema();
-    }
-  }, [createSchema]);
 
   return (
     <div className="w-full flex p-6">

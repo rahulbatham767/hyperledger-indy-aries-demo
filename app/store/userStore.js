@@ -16,7 +16,7 @@ const useUserStore = create(
       loading: false,
 
       login: async (data) => {
-        set({ loading: true, error: null });
+        set({ loading: true, error: null, success: false });
         const { email, password } = data;
         try {
           const response = await axios.post("/api/login", { email, password });
@@ -29,10 +29,15 @@ const useUserStore = create(
               token: userData.token,
               role: userData.data.role,
               loading: false,
+              success: true,
             });
             sessionStorage.setItem("userRole", userData.data.role);
+            sessionStorage.setItem(
+              "isLoggedIn",
+              Cookies.get("userToken") ? true : false
+            );
             sessionStorage.setItem("userName", userData.data.user.name);
-            // Use Next.js useRouter for navigation
+
             const router = useRouter();
             router.push("/connection");
           }
@@ -70,7 +75,6 @@ const useUserStore = create(
       logOut: async () => {
         const response = await axios.get("/api/logout");
         const message = response.data;
-
         set({
           isLoggedIn: false,
           user: null,
@@ -80,6 +84,11 @@ const useUserStore = create(
           error: null,
           message: message,
         });
+        localStorage.removeItem("issuer-storage");
+        sessionStorage.removeItem("userRole");
+        sessionStorage.removeItem("isLoggedIn");
+
+        window.location.href = "/login";
       },
 
       setUser: (user, token) =>
@@ -123,6 +132,20 @@ const useUserStore = create(
 
 if (typeof window !== "undefined") {
   window.store = useUserStore;
+  const TAB_ID = `tab_${Math.random()}`;
+  sessionStorage.setItem(TAB_ID, "active");
+  // Listen for unload event to clean up
+  window.addEventListener("unload", () => {
+    // Remove this tab from sessionStorage
+    sessionStorage.removeItem(TAB_ID);
+
+    // If no active tabs are left, log out the user
+    if (Object.keys(sessionStorage).length === 0) {
+      const useStoreInstance = useUserStore.getState();
+      localStorage.removeItem("issuer-storage");
+      useStoreInstance.logOut();
+    }
+  });
 }
 
 export default useUserStore;

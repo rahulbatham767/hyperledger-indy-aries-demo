@@ -20,6 +20,7 @@ export default function Page() {
     getSchema,
     SchemaDetails,
     getSchemaDetails,
+    getCredentialdefination,
     SchemaRecord,
   } = useStore();
 
@@ -53,10 +54,6 @@ export default function Page() {
 
   // Schema Records
   useEffect(() => {
-    // if (SchemaRecord && Object.keys(SchemaRecord).length > 0) {
-    //   setSchemaLoading(false);
-    // }
-
     if (SchemaRecord) {
       if (Object.keys(SchemaRecord).length > 0) {
         // Records exist, stop loading
@@ -73,6 +70,7 @@ export default function Page() {
 
   useEffect(() => {
     getSchema();
+    getCredentialdefination();
   }, []);
   console.log("SchemaRecord is ", SchemaRecord);
   console.log("SchemaRecord is ", SchemaDetails);
@@ -88,45 +86,47 @@ export default function Page() {
         <form className="grid lg:grid-cols-2 md:grid-cols-2  gap-6 w-full p-6">
           {/* Credential Schema Section */}
           <div className="flex flex-col items-start">
+            {/* Schema Heading */}
             <h2 className="text-lg font-semibold text-gray-600 mb-3">
               Credential Schema
             </h2>
-            {SchemaRecord?.schema_ids && SchemaRecord.schema_ids.length > 0 ? (
-              <select
-                value={selectedSchema}
-                onChange={handleSchemaChange}
-                className="w-full bg-inherit p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                <option value="" disabled>
-                  Select a Schema
-                </option>
-                {SchemaRecord.schema_ids.map((id, i) => (
+
+            {/* Schema Selection Dropdown */}
+            <select
+              value={selectedSchema}
+              onChange={handleSchemaChange}
+              className="w-full bg-inherit p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="" disabled>
+                {SchemaRecord?.schema_ids?.length > 0
+                  ? "Select a Schema"
+                  : "No Schema Available"}
+              </option>
+              {SchemaRecord?.schema_ids?.length > 0 &&
+                SchemaRecord.schema_ids.map((id, i) => (
                   <option key={i} value={id}>
                     {id}
                   </option>
                 ))}
-              </select>
-            ) : (
-              <p className="text-gray-500 text-sm italic">
-                No schema records available.
-              </p>
-            )}
+            </select>
 
+            {/* Schema Details */}
             {selectedSchema && SchemaDetails && (
               <div className="mt-4 p-3 border border-gray-200 bg-gray-100 rounded-md w-full shadow-sm">
                 <p className="text-sm text-gray-500">
-                  <strong>Name:</strong> {SchemaDetails.name}
+                  <strong>Name:</strong> {SchemaDetails.name || "N/A"}
                 </p>
                 <p className="text-sm text-gray-500">
-                  <strong>Version:</strong> {SchemaDetails.version}
+                  <strong>Version:</strong> {SchemaDetails.version || "N/A"}
                 </p>
                 <p className="text-sm text-gray-500">
-                  <strong>Id:</strong> {SchemaDetails.id}
+                  <strong>Id:</strong> {SchemaDetails.id || "N/A"}
                 </p>
                 <p className="text-sm text-gray-500">
                   <strong>Attributes:</strong>{" "}
-                  {Array.isArray(SchemaDetails?.attrNames)
-                    ? SchemaDetails?.attrNames.join(", ")
+                  {Array.isArray(SchemaDetails?.attrNames) &&
+                  SchemaDetails?.attrNames.length > 0
+                    ? SchemaDetails.attrNames.join(", ")
                     : "No attributes available"}
                 </p>
               </div>
@@ -144,67 +144,63 @@ export default function Page() {
               className="w-full bg-inherit p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
               <option value="" disabled>
-                Select a Definition
+                {Defination
+                  ? "Select a Definition"
+                  : "No Credential Defination Available"}{" "}
               </option>
               {Defination &&
-                Defination.length > 0 &&
-                Defination.map(({ credential_definition_ids }, key) =>
-                  credential_definition_ids?.map((def, index) => (
-                    <option key={`${key}-${index}`} value={def}>
-                      {def}
-                    </option>
-                  ))
-                )}
+                Defination?.credential_definition_ids?.map((def, key) => (
+                  <option key={`${key}`} value={def}>
+                    {def}
+                  </option>
+                ))}
             </select>
             {selectedDefinition &&
-            credDefination &&
-            typeof credDefination === "object" ? (
-              <div className="mt-4 p-3 border border-gray-200 bg-gray-100 rounded-md shadow-sm w-full">
-                {/* Access the properties of the 'DefinationDetail' object */}
-                {credDefination?.credential_definition ? (
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      <strong>ID:</strong>{" "}
-                      {credDefination?.credential_definition?.id || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      <strong>Schema ID:</strong>{" "}
-                      {credDefination?.credential_definition?.schemaId || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      <strong>Type:</strong>{" "}
-                      {credDefination?.credential_definition?.type || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      <strong>Tag:</strong>{" "}
-                      {credDefination?.credential_definition?.tag || "N/A"}
-                    </p>
-                    <div className="flex flex-wrap flex-col overflow-auto">
-                      <div className="text-sm text-gray-500">
-                        <strong>Value:</strong>
-                        {credDefination?.credential_definition?.value ? (
-                          <pre className="text-wrap text-gray-700">
-                            {JSON.stringify(
-                              credDefination?.credential_definition?.value,
-                              null,
-                              2
-                            )}
-                          </pre>
-                        ) : (
-                          <span className="text-gray-500">
-                            <p>Select a Credential Schema Defination First</p>
-                          </span>
-                        )}
+              credDefination &&
+              typeof credDefination === "object" && (
+                <div className="mt-4 p-3 border border-gray-200 bg-gray-100 rounded-md shadow-sm w-full">
+                  {/* Access the properties of the 'DefinationDetail' object */}
+                  {credDefination?.credential_definition && (
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        <strong>ID:</strong>{" "}
+                        {credDefination?.credential_definition?.id || "N/A"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        <strong>Schema ID:</strong>{" "}
+                        {credDefination?.credential_definition?.schemaId ||
+                          "N/A"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        <strong>Type:</strong>{" "}
+                        {credDefination?.credential_definition?.type || "N/A"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        <strong>Tag:</strong>{" "}
+                        {credDefination?.credential_definition?.tag || "N/A"}
+                      </p>
+                      <div className="flex flex-wrap flex-col overflow-auto">
+                        <div className="text-sm text-gray-500">
+                          <strong>Value:</strong>
+                          {credDefination?.credential_definition?.value ? (
+                            <pre className="text-wrap text-gray-700">
+                              {JSON.stringify(
+                                credDefination?.credential_definition?.value,
+                                null,
+                                2
+                              )}
+                            </pre>
+                          ) : (
+                            <span className="text-gray-500">
+                              <p>Select a Credential Schema Defination First</p>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <p>Select a Credential Schema Defination First</p>
-                )}
-              </div>
-            ) : (
-              <p>No data available</p>
-            )}
+                  )}
+                </div>
+              )}
           </div>
         </form>
       </div>

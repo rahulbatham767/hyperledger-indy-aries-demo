@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import useStore from "../store/useStore";
 
 export default function TabsNavigation() {
   const [activeTab, setActiveTab] = useState("");
   const router = useRouter();
   const pathname = usePathname();
 
+  const { fetchConnection } = useStore();
   const tabs = [
     { id: "active", label: "Active", href: "/connection/active" },
     { id: "pending", label: "Pending", href: "/connection/pending" },
@@ -23,11 +25,12 @@ export default function TabsNavigation() {
   const handleTabClick = (id, href) => {
     setActiveTab(id);
     router.push(href);
+    fetchConnection();
   };
 
   return (
     <div className="tabs-container w-full">
-      <div className="tabs-list grid grid-cols-4 w-full rounded-t-lg">
+      <div className="tabs-list grid mt-3 grid-cols-4 w-full rounded-t-lg">
         {tabs.map((tab) => (
           <button
             key={tab.id}

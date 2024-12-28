@@ -1,24 +1,25 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useUserStore from "../store/userStore";
 import LoadingScr from "./LoadingScr";
-
+import logo from "../OpenWallet_Foundation_Logo_Color.png";
+import Image from "next/image";
 const Navbarup = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { loading, isLoggedIn = false, role = "", logOut } = useUserStore();
+  const { loading, user, isLoggedIn, role, logOut } = useUserStore();
 
   // Define menu items for each role
   const roleBasedMenu = {
     admin: [
       { href: "/credentials", label: "Credentials" },
-      { href: "/records", label: "Credential-Records" },
+      // { href: "/records", label: "Credential-Records" },
       { href: "/issuing", label: "Issue-Credentials" },
     ],
     user: [
-      { href: "/send-proposal", label: "Send Proposal" },
+      // { href: "/send-proposal", label: "Send Proposal" },
       { href: "/present-proof", label: "Present Proof" },
       { href: "/records", label: "Credential" },
     ],
@@ -36,23 +37,38 @@ const Navbarup = () => {
   // Handle logout functionality
   const handleLogout = () => {
     logOut();
-    sessionStorage.removeItem("userRole");
-    sessionStorage.removeItem("isLoggedIn");
     router.push("/login");
   };
 
   // Utility function for dynamic link styling
   const getNavLinkClass = (isActive) =>
-    `cursor-pointer px-3 py-2 rounded-md text-sm font-medium ${
-      isActive ? "bg-blue-600 text-white" : "hover:bg-gray-700 hover:text-white"
+    `cursor-pointer px-2 py-2 rounded-md text-center text-sm font-medium ${
+      isActive ? "bg-blue-500 text-white" : "hover:bg-gray-700 hover:text-white"
     }`;
 
   if (loading) return <LoadingScr />;
 
   return (
-    <nav className="flex items-center justify-between p-3 text-white">
+    <nav className="flex items-center justify-between p-2 text-white w-full">
       {/* Left Navigation */}
-      <div className="flex gap-4 items-center">
+
+      <div className="w-50 flex uppercase">
+        {" "}
+        <Link href="/">
+          {user ? (
+            user.name
+          ) : (
+            <Image
+              src={logo}
+              alt="logo"
+              width={112}
+              height={32}
+              className="hidden lg:visible md:block"
+            />
+          )}
+        </Link>
+      </div>
+      <div className="flex gap-4 ml-auto items-center">
         {menuItems.map((item) => (
           <Link
             key={item.href}
@@ -67,11 +83,11 @@ const Navbarup = () => {
       </div>
 
       {/* Right Navigation */}
-      <div className="flex gap-4">
+      <div className="flex">
         {isLoggedIn ? (
           <button
             onClick={handleLogout}
-            className="cursor-pointer px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600"
+            className="cursor-pointer px-3 py-2 rounded-md text-sm ml-2 font-medium hover:bg-red-600"
             aria-label="Logout"
           >
             Logout

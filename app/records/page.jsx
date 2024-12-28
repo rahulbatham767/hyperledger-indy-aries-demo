@@ -33,12 +33,12 @@ export default function resultssPage() {
     return (
       <div className="min-h-screen bg-gray-100 p-6">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-semibold text-center mb-6 text-blue-600">
-            Issued results Records
+          <h1 className="text-3xl font-semibold mb-6 text-blue-600">
+            CREDENTIALS
           </h1>
 
           {/* Flexbox layout to allow wrapping */}
-          <div className="p-6 flex gap-3 lg:flex-nowrap flex-wrap justify-center">
+          <div className="p-6 flex gap-3 flex-wrap">
             {/* Check if issuedCredentials is not found */}
             {!Array.isArray(IssuedCredentials) ? (
               // Check if issuedCredentials is not an array
@@ -58,12 +58,12 @@ export default function resultssPage() {
                   className="bg-white p-6 shadow-md mb-6 w-[30rem] rounded-lg"
                 >
                   <h2 className="text-xl font-semibold mb-4 text-gray-800">
-                    Results Details
+                    ISSUED CREDENTIAL
                   </h2>
 
                   {/* Grid layout for results information */}
                   <div className="grid grid-cols-2 gap-6">
-                    <div className="flex flex-col flex-wrap ">
+                    <div className="flex flex-col flex-wrap">
                       <p className="font-medium text-gray-700">Referent ID:</p>
                       <p className="text-gray-600">{results.referent}</p>
                     </div>
@@ -75,7 +75,7 @@ export default function resultssPage() {
                     </div>
                     <div className="flex flex-col w-[200px] break-words">
                       <p className="font-medium text-gray-700">
-                        Results Definition ID:
+                        Definition ID:
                       </p>
                       <div className="w-full">
                         <p className="text-gray-600">{results.cred_def_id}</p>

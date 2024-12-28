@@ -247,3 +247,10 @@ export function PresentationTemplate(proof) {
 
   return data;
 }
+
+export function issueAttributes(attributes) {
+  return attributes.map((item) => {
+    const [key, value] = Object.entries(item)[0]; // Extract the first key-value pair
+    return { name: key, value: value };
+  });
+}

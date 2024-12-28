@@ -5,20 +5,36 @@ import { Button } from "@/components/ui/button";
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import LoadingScr from "@/app/components/LoadingScr"; // Import the Loading component if it's not already imported
+import { useRouter } from "next/navigation";
 
 const page = () => {
   const [pastedLink, setPastedLink] = useState("");
-  const { RecieveInvitation } = useStore();
+  const { RecieveInvitation, successStatus, Invitation, fetchConnection } =
+    useStore();
   const { loading } = useStore();
-
+  const route = useRouter();
   const handleAcceptInvitation = () => {
     if (!pastedLink) {
       toast.error("Please paste a valid invitation link");
       return;
     }
     // Process the invitation link here
-    RecieveInvitation(JSON.parse(pastedLink));
-    // You can further process the invitation (e.g., send it to an API)
+    RecieveInvitation(JSON.parse(pastedLink)).then(() => {
+      console.log("success status outside ", successStatus);
+      if (successStatus) {
+        console.log("success status inside ", successStatus);
+        setPastedLink("");
+        fetchConnection();
+        toast.success(
+          `Connection established Successfully with ${
+            Invitation?.invitation?.label?.charAt(0).toUpperCase() +
+            Invitation?.invitation?.label?.slice(1)
+          }`
+        );
+
+        route.push("/connection/active");
+      }
+    });
   };
 
   const pasteText = async () => {
@@ -27,40 +43,13 @@ const page = () => {
 
       setPastedLink(text);
       if (text.startsWith("{")) {
-        toast("📋 Link Pasted Successfully", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-        });
+        toast.success("📋 Link Pasted Successfully");
       } else {
-        toast("Please Provide a valid JSON Object", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-        });
+        toast.error("Please Provide a valid JSON Object");
       }
     } catch (error) {
       console.log(error);
-      toast("Failed to paste from clipboard", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-      });
+      toast.error("Failed to paste from clipboard", error.message);
     }
   };
 

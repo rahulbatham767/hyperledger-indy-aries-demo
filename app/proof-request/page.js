@@ -6,11 +6,17 @@ import verifierStore from "../store/verifierStore";
 import { mapAttributes, ProofRequests } from "../utils/helper";
 
 const ProofRequestPage = () => {
-  const { loading, error, sendProofRequest, fetchConnection, Active } =
-    useStore(); // Zustand store data
+  const {
+    loading,
+    sendProofRequest,
+    error: Error,
+    fetchConnection,
+    Active,
+  } = useStore(); // Zustand store data
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
   const [requestedAttributes, setRequestedAttributes] = useState("");
   const [requestedPredicates, setRequestedPredicates] = useState("");
+  const [selfattested, setSelfAttested] = useState("");
 
   // Fetch connections when the component mounts
   useEffect(() => {
@@ -22,36 +28,42 @@ const ProofRequestPage = () => {
     e.preventDefault();
 
     let mapAttribute;
-    try {
-      mapAttribute = mapAttributes(JSON.parse(requestedAttributes));
-      if (!selectedConnectionId) {
-        toast.error("Please select a connection.");
-        return;
-      }
-    } catch (error) {
-      toast.error("Invalid JSON format in requested attributes.");
+    let attributes, predicates;
+
+    attributes = JSON.parse(requestedAttributes);
+    predicates = JSON.parse(requestedPredicates);
+
+    mapAttribute = mapAttributes(attributes);
+    if (!selectedConnectionId) {
+      toast.error("Please select a connection.");
       return;
     }
 
+    console.log("map Attribute ", mapAttribute);
     const selectedConnection = Active.find(
       (conn) => conn.connection_id === selectedConnectionId
     );
 
+    if (!selectedConnection) {
+      toast.error("Connection not found.");
+      return;
+    }
+
     const proofRequestData = {
       connection_id: selectedConnection.connection_id,
       requested_attributes: mapAttribute,
-      requested_predicates: JSON.parse(requestedPredicates),
+      requested_predicates: predicates,
     };
+
+    console.log("Proof Request Data:", proofRequestData);
+
     const proofTemplate = ProofRequests(proofRequestData);
-    try {
-      await sendProofRequest(proofTemplate);
-      toast.success("Proof request sent successfully!");
-      setRequestedAttributes("");
-      setRequestedPredicates("");
-      setSelectedConnectionId("");
-    } catch (error) {
-      toast.error("Failed to send proof request.");
-    }
+    console.log("Proof Template:", proofTemplate);
+
+    sendProofRequest(proofTemplate);
+    setRequestedAttributes("");
+    setRequestedPredicates("");
+    setSelectedConnectionId("");
   };
 
   return (
@@ -59,7 +71,7 @@ const ProofRequestPage = () => {
       <h2 className="text-xl font-semibold">Send Proof Request</h2>
 
       {loading && <div>Loading connections...</div>}
-      {error && <div className="text-red-500">Error: {error}</div>}
+      {Error && <div className="text-red-500">Error: {Error}</div>}
 
       {/* If connections exist */}
       {Active.length > 0 ? (
@@ -111,6 +123,18 @@ const ProofRequestPage = () => {
               required
             ></textarea>
           </div>
+          {/* <div className="mb-4">
+            <label className="block text-lg font-semibold">
+              Self Attributes (JSON):
+            </label>
+            <textarea
+              value={selfattested}
+              onChange={(e) => setSelfAttested(e.target.value)}
+              placeholder='{"predicate1_referent": {"name": "age", "p_type": ">=", "p_value": 18}}'
+              className="w-full p-2 shadow-md mt-2 rounded-md border-cyan-200 border h-32 bg-white focus-visible:outline-none"
+              required
+            ></textarea>
+          </div> */}
 
           <button
             type="submit"

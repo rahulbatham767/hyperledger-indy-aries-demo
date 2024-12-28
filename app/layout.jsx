@@ -2,9 +2,8 @@ import Navbarup from "./components/Navbarup";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Link from "next/link";
-import Image from "next/image";
-import logo from "./OpenWallet_Foundation_Logo_Color.png";
+
+import TabCleanup from "./components/TabCleanup";
 
 export const metadata = {
   title: "Hyperledger Demo",
@@ -13,18 +12,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-full overflow-x-hidden">
-      <body className="h-full flex flex-col">
+    <html lang="en">
+      <body className="min-h-screen overflow-auto bg-gray-50">
         <div className="flex-grow">
           {/* Navbar */}
+          <TabCleanup />
           <header className="w-full bg-slate-500">
-            <div className="flex justify-between items-center px-4">
+            <div className="flex justify-between items-center px-4 sm:px-6 md:px-8 font-semibold">
               {/* Logo Section */}
-              <div className="w-[7rem]">
-                <Link href="/">
-                  <Image src={logo} alt="logo" sizes="full" />
-                </Link>
-              </div>
+
               {/* Navbar Section */}
               <Navbarup />
             </div>
@@ -46,8 +42,9 @@ export default function RootLayout({ children }) {
           />
 
           {/* Main Content */}
-
-          <main className="p-4 flex-grow overflow-auto">{children}</main>
+          <main className="flex-grow overflow-auto poppins-regular">
+            {children}
+          </main>
         </div>
       </body>
     </html>

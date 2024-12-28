@@ -5,14 +5,11 @@ import useStore from "@/app/store/useStore";
 import React, { useEffect, useState } from "react";
 
 const page = () => {
-  const { fetchConnection, Active, loading } = useStore();
+  const { Active } = useStore();
   const [activeLoading, setActiveLoading] = useState(true);
   console.log("In Active State " + Active);
   const pending = false;
 
-  useEffect(() => {
-    fetchConnection();
-  }, []);
   useEffect(() => {
     if (Active) {
       if (Active.length > 0) {

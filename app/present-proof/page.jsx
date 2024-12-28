@@ -9,27 +9,19 @@ const ProofRequestPage = () => {
   const [selectedProofRequest, setSelectedProofRequest] = useState("");
   const [selectedAttributes, setSelectedAttributes] = useState({});
   const [credId, setCredId] = useState("");
-  const [revealed, setRevealed] = useState(null);
-
+  const [selectedStatus, setSelectedStatus] = useState("");
   const {
     fetchProofRequest,
-    proofRequest,
+    ProofRequests,
     RequestedCred,
     fetchRequestedCred,
     sendPresentation,
   } = useStore();
 
-  useEffect(() => {
-    fetchProofRequest();
-  }, []);
-
-  console.log(proofRequest);
-  console.log("selectedAttributes is ", selectedProofRequest);
-  console.log("RequestedCred is ", RequestedCred);
-  console.log("Selected Attribute is ", selectedAttributes);
-  // Define available proof requests
-
-  // Define requested attributes
+  const handleStatusChange = (e) => {
+    setSelectedStatus(e.target.value);
+    fetchProofRequest(e.target.value);
+  };
 
   // Handle proof request selection change
   const handleProofRequestChange = (e) => {
@@ -40,7 +32,7 @@ const ProofRequestPage = () => {
   // Handle checkbox change for requested attributes
 
   const findProof = useMemo(() => {
-    const proof = proofRequest.find(
+    const proof = ProofRequests?.find(
       (item) => item.pres_ex_id === selectedProofRequest
     );
     if (proof) {
@@ -55,18 +47,11 @@ const ProofRequestPage = () => {
       }
     }
     return null;
-  }, [proofRequest, selectedProofRequest]);
-
-  console.log("find proof is ", findProof);
+  }, [ProofRequests, selectedProofRequest]);
 
   // Handle credId input change
   const handleCredIdChange = (e) => {
     setCredId(e.target.value);
-  };
-
-  // Handle radio button change for revealed option
-  const handleRevealedChange = (e) => {
-    setRevealed(e.target.value === "true");
   };
 
   // Handle form submission
@@ -78,11 +63,17 @@ const ProofRequestPage = () => {
       selectedAttributes,
     };
 
-    console.log("Proof Request Data:", proofRequestData);
     const presentation = PresentationTemplate(proofRequestData);
-    console.log("presentation is ", presentation);
-    sendPresentation(presentation, selectedProofRequest);
-    // You can now send this data to your server or handle it further.
+    console.log("presentation is ", presentation, selectedProofRequest);
+
+    sendPresentation(presentation, selectedProofRequest).then(() => {
+      {
+        setSelectedProofRequest("");
+        setSelectedAttributes({});
+        setSelectedStatus("");
+        setCredId("");
+      }
+    });
   };
 
   return (
@@ -91,36 +82,60 @@ const ProofRequestPage = () => {
         <h1 className="text-2xl font-bold text-center mb-6">PROOF REQUEST</h1>
 
         <form onSubmit={handleSubmit}>
-          {/* Proof Request Dropdown */}
           <div className="mb-4">
-            <label htmlFor="proofRequest" className="block text-sm font-medium">
-              Select Proof Request:
+            {/* Status Selection */}
+            <label htmlFor="status" className="block text-sm font-medium">
+              Select Status:
             </label>
             <select
-              id="proofRequest"
-              value={selectedProofRequest}
-              onChange={handleProofRequestChange}
+              id="status"
               className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
-              required
+              value={selectedStatus}
+              onChange={handleStatusChange}
             >
-              <option value="">
-                {" "}
-                {proofRequest.length > 0
-                  ? "Select Proof Request"
-                  : "No Proof Request Available"}
-              </option>
-              {proofRequest &&
-                proofRequest.length > 0 &&
-                proofRequest.map((proofRequest, id) => (
-                  <option key={id} value={proofRequest.pres_ex_id}>
-                    {proofRequest.pres_ex_id}
-                  </option>
-                ))}
+              <option value="">Select Proof Status</option>
+              <option value="request-received">Proof Request</option>
+              <option value="abandoned">abandoned</option>
             </select>
           </div>
 
+          {/* Proof Request Dropdown */}
+          {selectedStatus && (
+            <div className="mb-4">
+              <label
+                htmlFor="proofRequest"
+                className="block text-sm font-medium"
+              >
+                Select Proof Request:
+              </label>
+              <select
+                id="proofRequest"
+                value={selectedProofRequest}
+                onChange={handleProofRequestChange}
+                className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white"
+                required
+              >
+                <option value="">
+                  {" "}
+                  {ProofRequests?.length > 0
+                    ? "Select Proof Request"
+                    : "No Proof Request Available"}
+                </option>
+                {ProofRequests &&
+                  ProofRequests.length > 0 &&
+                  ProofRequests.map((proofRequest, id) => (
+                    <option key={id} value={proofRequest.pres_ex_id}>
+                      {proofRequest.pres_ex_id}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
           {/* Requested Attributes Checkboxes */}
-          {proofRequest && proofRequest.length > 0 ? (
+          {ProofRequests &&
+          selectedStatus &&
+          selectedProofRequest &&
+          ProofRequests.length > 0 ? (
             <div className="mb-4">
               <label className="block text-sm font-medium">
                 Requested Attributes:
@@ -155,42 +170,52 @@ const ProofRequestPage = () => {
               </div>
             </div>
           ) : (
-            <p>No proof request found</p>
+            <p></p>
           )}
 
           {/* Credential ID Input */}
-          {proofRequest && proofRequest.length > 0 && (
-            <div className="mb-4">
-              <label htmlFor="credId" className="block text-sm font-medium">
-                Credential ID:
-              </label>
-              <input
-                type="text"
-                id="credId"
-                value={credId}
-                onChange={handleCredIdChange}
-                className="w-full px-3 py-2 mt-1 border bg-white border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-          )}
+          {ProofRequests &&
+            ProofRequests.length > 0 &&
+            selectedProofRequest && (
+              <div className="mb-4">
+                <label htmlFor="credId" className="block text-sm font-medium">
+                  Referent ID:
+                </label>
+                <input
+                  type="text"
+                  id="credId"
+                  value={credId}
+                  onChange={handleCredIdChange}
+                  className="w-full px-3 py-2 mt-1 border bg-white border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+            )}
 
           <small className="text-gray-600 font-medium">
-            ✔ Check the Requested Attributes that you want to Reveal
+            {selectedStatus && ProofRequests && selectedProofRequest
+              ? " ✔ Check the Requested Attributes that you want to Reveal"
+              : ""}
           </small>
           {/* Send Proof Button */}
           <div className="mt-6 text-center">
-            <button
-              type="submit"
-              className={`px-6 py-2 ${
-                proofRequest > 0
-                  ? "bg-blue-600 hover:bg-blue-500"
-                  : "bg-slate-500 hover:bg-slate-400"
-              } text-white rounded-md shadow-md`}
-              disabled={!proofRequest || proofRequest.length === 0}
-            >
-              Send Proof
-            </button>
+            {selectedStatus === "abandoned" &&
+            findProof &&
+            findProof.length > 0 ? (
+              <p>Requested Attriutes are not present</p>
+            ) : (
+              <button
+                type="submit"
+                className={`px-6 py-2 ${
+                  findProof && findProof.length > 0
+                    ? "bg-blue-600 hover:bg-blue-500"
+                    : "bg-slate-500 hover:bg-slate-400"
+                } text-white rounded-md shadow-md`}
+                disabled={!findProof || findProof.length > 0 === 0}
+              >
+                Send Proof
+              </button>
+            )}
           </div>
         </form>
       </div>
