@@ -24,15 +24,16 @@ const page = () => {
       if (successStatus) {
         console.log("success status inside ", successStatus);
         setPastedLink("");
-        fetchConnection();
-        toast.success(
-          `Connection established Successfully with ${
-            Invitation?.invitation?.label?.charAt(0).toUpperCase() +
-            Invitation?.invitation?.label?.slice(1)
-          }`
-        );
+        fetchConnection().then(() => {
+          toast.success(
+            `Connection established Successfully with ${
+              Invitation?.invitation?.label?.charAt(0).toUpperCase() +
+              Invitation?.invitation?.label?.slice(1)
+            }`
+          );
 
-        route.push("/connection/active");
+          route.push("/connection/active");
+        });
       }
     });
   };

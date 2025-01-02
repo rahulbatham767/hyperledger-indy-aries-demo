@@ -8,7 +8,7 @@ const Offer = () => {
   const [relationship, setRelationship] = useState("");
   const [credentialSchema, setCredentialSchema] = useState("");
   const [credentialDefinition, setCredentialDefinition] = useState("");
-  const [attributes, setAttributes] = useState("");
+  const [attributes, setAttributes] = useState([]);
 
   // Local states for store data
   const [activeRelationships, setActiveRelationships] = useState([]);
@@ -26,6 +26,23 @@ const Offer = () => {
     getCredentialdefination,
   } = useStore();
 
+  // Add a new attribute field
+  const addAttribute = () => {
+    setAttributes([...attributes, ""]);
+  };
+
+  // Remove an attribute field by index
+  const removeAttribute = (index) => {
+    setAttributes(attributes.filter((_, i) => i !== index));
+  };
+
+  // Update an attribute value
+  const updateAttribute = (index, value) => {
+    const updatedAttributes = [...attributes];
+    updatedAttributes[index] = value;
+    setAttributes(updatedAttributes);
+  };
+
   const handleIssueCredential = async (e) => {
     e.preventDefault();
 
@@ -33,7 +50,7 @@ const Offer = () => {
       !relationship ||
       !credentialSchema ||
       !credentialDefinition ||
-      !attributes
+      attributes.length === 0
     ) {
       toast.error("Please fill in all fields!", {
         position: "top-right",
@@ -42,25 +59,11 @@ const Offer = () => {
       return;
     }
 
-    let parsedAttributes, mapping;
-    try {
-      const parsed = JSON.parse(attributes);
-      parsedAttributes = schemaDetails?.attrNames.map((key, index) => ({
-        [key]: parsed[index],
-      }));
-      mapping = issueAttributes(parsedAttributes);
+    const mapping = schemaDetails?.attrNames.map((key, index) => ({
+      [key]: attributes[index],
+    }));
 
-      if (!Array.isArray(parsedAttributes)) throw new Error();
-    } catch {
-      toast.error(
-        "Invalid JSON array format for attributes. Please try again.",
-        {
-          position: "top-right",
-          autoClose: 5000,
-        }
-      );
-      return;
-    }
+    const mappedAttributes = issueAttributes(mapping);
 
     const issuer_did = credentialSchema.split(":")[0];
     const formData = {
@@ -69,18 +72,22 @@ const Offer = () => {
       issuer_did: issuer_did,
       schema_issuer_did: issuer_did,
       cred_def_id: credentialDefinition,
-      attributes: mapping,
+      attributes: mappedAttributes,
     };
 
-    issueingCredential(formData);
-
-    setRelationship("");
-    setCredentialSchema("");
-    setCredentialDefinition("");
-    setAttributes("");
+    console.log(formData);
+    issueingCredential(formData)
+      .then(() => {
+        setRelationship("");
+        setCredentialSchema("");
+        setCredentialDefinition("");
+        setAttributes([]);
+      })
+      .catch((err) => {
+        toast.error("Error while issueing Credential", err?.message);
+      });
   };
 
-  // Fetch data and store in local states
   useEffect(() => {
     setActiveRelationships(Active || []);
     setDefinitions(Defination?.credential_definition_ids || []);
@@ -183,14 +190,33 @@ const Offer = () => {
           {/* Attributes Field */}
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2">
-              Attributes (JSON Format):
+              Attributes:
             </label>
-            <textarea
-              placeholder='["rahul","XX4170"]'
-              value={attributes}
-              onChange={(e) => setAttributes(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded resize-none h-32 bg-white"
-            />
+            {attributes.map((attribute, index) => (
+              <div key={index} className="flex items-center mb-2">
+                <input
+                  type="text"
+                  value={attribute}
+                  onChange={(e) => updateAttribute(index, e.target.value)}
+                  placeholder={`Attribute ${index + 1}`}
+                  className="flex-1 p-2 border shadow-sm bg-white rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeAttribute(index)}
+                  className="ml-2 p-2 text-red-500 hover:bg-red-500 hover:text-white rounded-md border shadow-md"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addAttribute}
+              className="mt-2 bg-green-500 text-white px-4 py-2 rounded"
+            >
+              Add Attribute
+            </button>
           </div>
 
           {/* Submit Button */}

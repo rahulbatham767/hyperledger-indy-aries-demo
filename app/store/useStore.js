@@ -237,8 +237,13 @@ const useStore = create(
       credentialDefination: async (issuer) => {
         set({ loading: true, error: null, successStatus: null });
         try {
-          await apiCall("post", `${url}/credential-definitions`, issuer);
-          set({ loading: false, successStatus: true });
+          const response = await apiCall(
+            "post",
+            `${url}/credential-definitions`,
+            issuer
+          );
+          console.log(response);
+          set({ loading: false, data: response, successStatus: true });
         } catch (error) {
           set({ error: error.message, loading: false, successStatus: false });
         }

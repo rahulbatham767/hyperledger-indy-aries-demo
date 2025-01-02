@@ -24,9 +24,9 @@ export async function POST(req) {
       company: "college",
     },
     {
-      email: "accenture@gmail.com",
+      email: "cdac@gmail.com",
       password: "password123",
-      name: "Accenture",
+      name: "CDAC",
       role: "verifier",
       company: "college",
     },

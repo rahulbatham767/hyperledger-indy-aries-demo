@@ -14,26 +14,37 @@ const ProofRequestPage = () => {
     Active,
   } = useStore(); // Zustand store data
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
-  const [requestedAttributes, setRequestedAttributes] = useState("");
+  const [requestedAttributes, setRequestedAttributes] = useState([]);
   const [requestedPredicates, setRequestedPredicates] = useState("");
-  const [selfattested, setSelfAttested] = useState("");
+  const [newAttribute, setNewAttribute] = useState("");
 
   // Fetch connections when the component mounts
   useEffect(() => {
     fetchConnection();
   }, [fetchConnection]);
 
+  // Add new attribute to the list
+  const handleAddAttribute = () => {
+    if (!newAttribute.trim()) {
+      toast.error("Attribute cannot be empty.");
+      return;
+    }
+    setRequestedAttributes([...requestedAttributes, newAttribute.trim()]);
+    setNewAttribute("");
+  };
+
+  // Remove attribute from the list
+  const handleRemoveAttribute = (index) => {
+    const updatedAttributes = requestedAttributes.filter((_, i) => i !== index);
+    setRequestedAttributes(updatedAttributes);
+  };
+
   // Handle proof request submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    let mapAttribute;
-    let attributes, predicates;
-
-    attributes = JSON.parse(requestedAttributes);
-    predicates = JSON.parse(requestedPredicates);
-
-    mapAttribute = mapAttributes(attributes);
+    let mapAttribute, predicates;
+    mapAttribute = mapAttributes(requestedAttributes);
     if (!selectedConnectionId) {
       toast.error("Please select a connection.");
       return;
@@ -52,7 +63,7 @@ const ProofRequestPage = () => {
     const proofRequestData = {
       connection_id: selectedConnection.connection_id,
       requested_attributes: mapAttribute,
-      requested_predicates: predicates,
+      requested_predicates: predicates || {},
     };
 
     console.log("Proof Request Data:", proofRequestData);
@@ -61,7 +72,7 @@ const ProofRequestPage = () => {
     console.log("Proof Template:", proofTemplate);
 
     sendProofRequest(proofTemplate);
-    setRequestedAttributes("");
+    setRequestedAttributes([]);
     setRequestedPredicates("");
     setSelectedConnectionId("");
   };
@@ -98,7 +109,7 @@ const ProofRequestPage = () => {
             </select>
           </div>
 
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <label className="block text-lg font-semibold">
               Requested Attributes (Array):
             </label>
@@ -109,19 +120,42 @@ const ProofRequestPage = () => {
               className="w-full p-2 shadow-md rounded-md mt-2 border-cyan-200 focus-visible:outline-none h-32 bg-white"
               required
             ></textarea>
-          </div>
+          </div> */}
 
           <div className="mb-4">
             <label className="block text-lg font-semibold">
-              Requested Predicates (JSON):
+              Requested Attributes:
             </label>
-            <textarea
-              value={requestedPredicates}
-              onChange={(e) => setRequestedPredicates(e.target.value)}
-              placeholder='{"predicate1_referent": {"name": "age", "p_type": ">=", "p_value": 18}}'
-              className="w-full p-2 shadow-md mt-2 rounded-md border-cyan-200 border h-32 bg-white focus-visible:outline-none"
-              required
-            ></textarea>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newAttribute}
+                onChange={(e) => setNewAttribute(e.target.value)}
+                placeholder="Enter an attribute"
+                className="w-full p-2 border rounded bg-white"
+              />
+              <button
+                type="button"
+                onClick={handleAddAttribute}
+                className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600"
+              >
+                Add
+              </button>
+            </div>
+            <ul className="mt-2">
+              {requestedAttributes.map((attribute, index) => (
+                <li key={index} className="flex items-center gap-2">
+                  <span className="flex-1">{attribute}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAttribute(index)}
+                    className="bg-red-500 mt-2 text-white py-1 px-2 rounded hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
           {/* <div className="mb-4">
             <label className="block text-lg font-semibold">

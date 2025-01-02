@@ -13,9 +13,26 @@ const Schema = () => {
   // State for form inputs
   const [schemaName, setSchemaName] = useState("");
   const [schemaVersion, setSchemaVersion] = useState("");
-  const [attributes, setAttributes] = useState("");
+  const [attributes, setAttributes] = useState([""]); // Array for attributes
+
   const { createSchema, successStatus, getSchema } = useStore();
-  // Function to validate if a string is a valid JSON array
+
+  // Handle adding a new attribute input
+  const handleAddAttribute = () => {
+    setAttributes([...attributes, ""]);
+  };
+
+  // Handle removing an attribute input
+  const handleRemoveAttribute = (index) => {
+    setAttributes(attributes.filter((_, i) => i !== index));
+  };
+
+  // Handle updating the value of an attribute input
+  const handleAttributeChange = (index, value) => {
+    const updatedAttributes = [...attributes];
+    updatedAttributes[index] = value;
+    setAttributes(updatedAttributes);
+  };
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -26,27 +43,18 @@ const Schema = () => {
       return;
     }
 
-    let parsedAttributes;
-    if (attributes.trim() && isValidJsonArray(attributes)) {
-      try {
-        parsedAttributes = JSON.parse(attributes); // Parse attributes JSON string into an array
-        console.log("Parsed Attributes:", parsedAttributes);
-      } catch (error) {
-        console.error("JSON parsing error:", error);
-        toast.error("Invalid JSON array format. Please check your input.");
-        return;
-      }
-    } else {
-      toast.error(
-        "Invalid JSON array format for attributes. Please try again."
-      );
+    const trimmedAttributes = attributes
+      .map((attr) => attr.trim())
+      .filter(Boolean);
+    if (trimmedAttributes.length === 0) {
+      toast.error("Please add at least one valid attribute.");
       return;
     }
 
     const formData = {
       schema_name: schemaName.trim(),
-      schema_version: schemaVersion.trim(),
-      attributes: parsedAttributes,
+      schema_version: parseFloat(schemaVersion).toFixed(1),
+      attributes: trimmedAttributes,
     };
 
     console.log("Form Data:", formData);
@@ -60,7 +68,7 @@ const Schema = () => {
         });
         setSchemaName("");
         setSchemaVersion("");
-        setAttributes("");
+        setAttributes([""]);
       }
     });
   };
@@ -104,17 +112,37 @@ const Schema = () => {
 
           {/* Attributes */}
           <FormItem>
-            <FormLabel className="text-lg font-medium">
-              Attributes (JSON Array):
-            </FormLabel>
-            <FormControl>
-              <Textarea
-                placeholder={`Example: ["name", "degree", "status"]`}
-                value={attributes}
-                onChange={(e) => setAttributes(e.target.value)}
-                className="border-gray-300 focus:ring-blue-500 focus:border-blue-500 resize-none h-28"
-              />
-            </FormControl>
+            <FormLabel className="text-lg font-medium">Attributes:</FormLabel>
+            {attributes.map((attribute, index) => (
+              <div key={index} className="flex items-center mb-2">
+                <FormControl>
+                  <Input
+                    placeholder={`Attribute ${index + 1}`}
+                    value={attribute}
+                    onChange={(e) =>
+                      handleAttributeChange(index, e.target.value)
+                    }
+                    className="border-gray-300 focus:ring-blue-500 focus:border-blue-500 flex-grow mr-2"
+                  />
+                </FormControl>
+                <Button
+                  variant="ghost"
+                  className="bg-green-500 hover:bg-green-600 text-white rounded-lg mr-2"
+                  onClick={handleAddAttribute}
+                >
+                  +
+                </Button>
+                {attributes.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg"
+                    onClick={() => handleRemoveAttribute(index)}
+                  >
+                    —
+                  </Button>
+                )}
+              </div>
+            ))}
           </FormItem>
           <br />
 

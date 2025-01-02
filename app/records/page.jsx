@@ -91,7 +91,7 @@ export default function resultssPage() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-700">
-                        Results Revocation ID:
+                        Revocation ID:
                       </p>
                       <p className="text-gray-600">
                         {results.cred_rev_id || "N/A"}

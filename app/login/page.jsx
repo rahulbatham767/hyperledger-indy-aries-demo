@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import useUserStore from "../store/userStore";
+import useStore from "../store/useStore";
 
 const InputField = ({ id, type, placeholder, value, onChange }) => (
   <div>
@@ -29,6 +30,12 @@ function Page() {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const { login } = useUserStore();
+  const {
+    fetchConnection,
+    getCredentialdefination,
+    getSchema,
+    credentialRecords,
+  } = useStore();
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -40,8 +47,14 @@ function Page() {
     }
 
     try {
-      await login({ email, password });
-      router.push("/"); // Redirect after successful login
+      await login({ email, password }).then(() => {
+        router.push("/"); // Redirect after successful login
+        fetchConnection();
+
+        getCredentialdefination();
+        getSchema();
+        credentialRecords();
+      });
     } catch (err) {
       toast.error(err.message);
     }

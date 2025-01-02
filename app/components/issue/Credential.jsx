@@ -43,15 +43,17 @@ const Credentials = () => {
     };
 
     console.log("Form Data:", formData);
-    credentialDefination(formData);
-    if (successStatus) {
-      toast.success("Credential Definition created successfully!");
-      setSchemaName("");
-      setSchemaVersion("");
-      setTag("");
-    } else {
-      toast.error("Failed to create Credential Definition!");
-    }
+    credentialDefination(formData).then((response) => {
+      console.log(response);
+      if (successStatus) {
+        toast.success("Credential Definition created successfully!");
+        setSchemaName("");
+        setSchemaVersion("");
+        setTag("");
+      } else {
+        toast.error("Failed to create Credential Definition!");
+      }
+    });
   };
 
   // Fetch schemas from the store and store them in local state
