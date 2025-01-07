@@ -257,7 +257,7 @@ const useStore = create(
             data = await apiCall(
               "get",
               `${url}/credential-definitions/created`,
-              { schema_id: id }
+              { schema_id: id, support_revocation: true }
             );
           } else {
             data = await apiCall(
