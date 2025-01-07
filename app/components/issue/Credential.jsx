@@ -21,6 +21,7 @@ const Credentials = () => {
     getSchema,
     getSchemaDetails,
     successStatus,
+    loading,
   } = useStore();
 
   // Handle form submission
@@ -40,11 +41,13 @@ const Credentials = () => {
       schema_id: schemaName,
       tag: tag,
       schema_version: schemaVersion,
+      support_revocation: true,
     };
 
     console.log("Form Data:", formData);
     credentialDefination(formData).then((response) => {
       console.log(response);
+      if (loading) toast.success("Creating credentials Defination...");
       if (successStatus) {
         toast.success("Credential Definition created successfully!");
         setSchemaName("");
