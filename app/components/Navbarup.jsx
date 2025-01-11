@@ -21,6 +21,7 @@ const Navbarup = () => {
     user: [
       // { href: "/send-proposal", label: "Send Proposal" },
       { href: "/present-proof", label: "Present Proof" },
+      { href: "/request-credential", label: "Request Credential" },
       { href: "/records", label: "Credential" },
     ],
     verifier: [

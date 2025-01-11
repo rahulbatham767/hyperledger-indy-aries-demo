@@ -1,3 +1,4 @@
+// format date
 export function formatDate(dateString) {
   const date = new Date(dateString);
 
@@ -42,6 +43,7 @@ export const parseSchemas = (schemas) => {
   });
 };
 
+// for checking valid json ro not
 export const isValidJsonArray = (str) => {
   try {
     const parsed = JSON.parse(str);
@@ -51,14 +53,12 @@ export const isValidJsonArray = (str) => {
   }
 };
 
+// for getting value before colon
 export function getValueBeforeColon(inputString) {
   return inputString.split(":")[0];
 }
 
-// Dynamically build @context from attributes
-const context = {
-  "https://www.w3.org/2018/credentials/v1": {},
-};
+// for issuing credentials
 export function generateCredentialPayload(issuer) {
   // Create the context object dynamically
   const context = {
@@ -115,6 +115,7 @@ export function generateCredentialPayload(issuer) {
   return payload;
 }
 
+// for proposing credentials user
 export function ProposalforCredential(issuer) {
   // Create the context object dynamically
   const context = {
@@ -133,7 +134,6 @@ export function ProposalforCredential(issuer) {
     subject[attr.name] = attr.value;
     return subject;
   }, {});
-
   // Extract recipient name from attributes
   const recipientName =
     issuer.attributes.find((attr) => attr.name === "name")?.value || "Unknown";
@@ -146,6 +146,8 @@ export function ProposalforCredential(issuer) {
     comment: "I want These Credential...",
     connection_id: issuer.connection_id,
     auto_remove: false,
+    role: "holder",
+    comment: issuer.Requestor,
     credential_preview: {
       "@type": "issue-credential/2.0/credential-preview",
       attributes: issuer.attributes,

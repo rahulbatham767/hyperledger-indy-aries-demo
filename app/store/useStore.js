@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { generateCredentialPayload } from "../utils/helper";
+import {
+  generateCredentialPayload,
+  ProposalforCredential,
+} from "../utils/helper";
 
 const userAccess = Cookies.get("userRole"); // Retrieve the user role from cookies
 // const userAccess = localStorage.getItem("userRole"); // Retrieve the user role from cookies
@@ -49,6 +52,7 @@ const useStore = create(
       Presentations: [],
       ReceieveProof: [],
       RequestedCred: [],
+      Credential_state: [],
       singlePresentation: [],
       verifiedPresentation: [],
       showNotification: false,
@@ -97,6 +101,7 @@ const useStore = create(
           RequestedCred: [],
           singlePresentation: [],
           verifiedPresentation: [],
+          SingleCredential: [],
           showNotification: false,
         });
       },
@@ -309,7 +314,29 @@ const useStore = create(
           set({ error: error.message, loading: false, successStatus: false });
         }
       },
+      credentialProposal: async (formData) => {
+        set({ loading: true, error: null, successStatus: null });
+        const payload = ProposalforCredential(formData);
+        console.log("payload is ", payload);
+        try {
+          const response = await apiCall(
+            "post",
+            `${url}/issue-credential-2.0/send-proposal`,
+            payload
+          );
 
+          console.log("response received", response);
+
+          toast.success("Proposal sended Successfully");
+          set({
+            loading: false,
+            successStatus: true,
+          });
+        } catch (error) {
+          toast.error("Failed to send proposal");
+          set({ error: error.message, loading: false, successStatus: false });
+        }
+      },
       credentialRecords: async () => {
         set({ loading: true, error: null, successStatus: null });
         try {
@@ -381,6 +408,53 @@ const useStore = create(
           }
         } catch (error) {
           set({ error: error.message, loading: false, successStatus: false });
+        }
+      },
+      // fetching credential Request
+      fetchCredRequest: async (value) => {
+        set({ loading: true, error: null, successStatus: null });
+        try {
+          let data;
+          if (value !== "") {
+            data = await apiCall(
+              "get",
+              `${url}/issue-credential-2.0/records?limit=100&offset=0&state=${value}`
+            );
+            set({
+              Credential_state: data.results,
+              loading: false,
+              successStatus: true,
+            });
+          } else {
+            set({
+              Credential_state: [],
+
+              loading: false,
+              successStatus: true,
+            });
+          }
+        } catch (error) {
+          set({ error: error.message, loading: false, successStatus: false });
+        }
+      },
+      fetchRequestedCredential: async (param) => {
+        set({ loading: true, error: null });
+
+        try {
+          if (param !== "") {
+            const response = await axios.get(
+              `${url}/issue-credential-2.0/records/${param}`
+            );
+            const CurrentCredential = response.data;
+            set({
+              SingleCredential: CurrentCredential,
+              loading: false,
+            });
+          } else {
+            set({ SingleCredential: [], loading: false });
+          }
+        } catch (error) {
+          set({ error: error.message, loading: false });
         }
       },
       sendProofRequest: async (data) => {

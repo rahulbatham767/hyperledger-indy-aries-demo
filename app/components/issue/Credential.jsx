@@ -41,7 +41,7 @@ const Credentials = () => {
       schema_id: schemaName,
       tag: tag,
       schema_version: schemaVersion,
-      support_revocation: true,
+      // support_revocation: true,
     };
 
     console.log("Form Data:", formData);

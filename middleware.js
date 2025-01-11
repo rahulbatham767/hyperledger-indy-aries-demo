@@ -10,6 +10,7 @@ export function middleware(request) {
   // Protected routes and roles
   const protectedRoutes = [
     { path: "/connection", roles: ["user", "verifier", "admin"] },
+    { path: "/request-proof", roles: ["user", "verifier", "admin"] },
     { path: "/credentials", roles: ["user", "verifier", "admin"] },
     { path: "/records", roles: ["user", "verifier", "admin"] },
     { path: "/proof-request", roles: ["verifier"] }, // Only verifiers can access
