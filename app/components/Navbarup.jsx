@@ -6,11 +6,12 @@ import useUserStore from "../store/userStore";
 import LoadingScr from "./LoadingScr";
 import logo from "../OpenWallet_Foundation_Logo_Color.png";
 import Image from "next/image";
+import useWebSocketStore from "../store/useWebSocketStore";
 const Navbarup = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { loading, user, isLoggedIn, role, logOut } = useUserStore();
-
+  const { disconnect } = useWebSocketStore();
   // Define menu items for each role
   const roleBasedMenu = {
     admin: [
@@ -30,7 +31,10 @@ const Navbarup = () => {
     ],
   };
 
-  const commonMenu = [{ href: "/connection", label: "Connection" }];
+  const commonMenu = [
+    { href: "/connection", label: "Connection" },
+    { href: "/message", label: "Message" },
+  ];
   const menuItems = isLoggedIn
     ? [...commonMenu, ...(roleBasedMenu[role] || [])]
     : [];
@@ -38,6 +42,7 @@ const Navbarup = () => {
   // Handle logout functionality
   const handleLogout = () => {
     logOut();
+    disconnect();
     router.push("/login");
   };
 

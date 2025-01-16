@@ -14,15 +14,16 @@ const useUserStore = create(
       error: null,
       message: "",
       loading: false,
-
       login: async (data) => {
         set({ loading: true, error: null, success: false });
         const { email, password } = data;
+
         try {
           const response = await axios.post("/api/login", { email, password });
           const userData = response.data;
-
-          if (userData.success) {
+          console.log(userData);
+          // ✅ Added additional check for userData structure
+          if (userData.success && userData.data && userData.data.name) {
             set({
               isLoggedIn: true,
               user: userData.data,
@@ -31,20 +32,21 @@ const useUserStore = create(
               loading: false,
               success: true,
             });
-            sessionStorage.setItem("userRole", userData.data.role);
+
+            // ✅ Using sessionStorage to store user details securely
+            sessionStorage.setItem("userRole", userData.data.role || "");
+            sessionStorage.setItem("isLoggedIn", "true");
             sessionStorage.setItem(
-              "isLoggedIn",
-              Cookies.get("userToken") ? true : false
+              "userName",
+              userData.data.user?.name || "Unknown"
             );
-            sessionStorage.setItem("userName", userData.data.user.name);
 
-            const router = useRouter();
-            router.push("/connection");
+            return userData;
+          } else {
+            throw new Error("Invalid response structure from the server");
           }
-
-          return userData;
         } catch (error) {
-          set({ loading: false, error: error.message });
+          set({ loading: false, error: error.message, success: false });
           return { success: false, message: error.message };
         }
       },
@@ -71,24 +73,43 @@ const useUserStore = create(
           return { success: false, message: error.message };
         }
       },
-
       logOut: async () => {
-        const response = await axios.get("/api/logout");
-        const message = response.data;
-        set({
-          isLoggedIn: false,
-          user: null,
-          token: null,
-          role: null,
-          loading: false,
-          error: null,
-          message: message,
-        });
-        localStorage.removeItem("issuer-storage");
-        sessionStorage.removeItem("userRole");
-        sessionStorage.removeItem("isLoggedIn");
+        try {
+          // Call the backend logout API (if any)
+          const response = await axios.get("/api/logout");
+          const message = response.data;
 
-        window.location.href = "/login";
+          // Clear app state
+          set({
+            isLoggedIn: false,
+            user: null,
+            token: null,
+            role: null,
+            loading: false,
+            error: null,
+            message: message,
+          });
+
+          // Clean up localStorage and sessionStorage
+          localStorage.removeItem("issuer-storage");
+          sessionStorage.removeItem("userRole");
+          sessionStorage.removeItem("isLoggedIn");
+          sessionStorage.removeItem("userName");
+
+          // Optionally remove cookies if set
+          Cookies.remove("userToken");
+          Cookies.remove("userRole");
+
+          // Redirect to login page
+          window.location.href = "/login"; // Ensure the redirect happens after cleanup
+        } catch (error) {
+          // Handle any errors during logout
+          console.error("Logout error:", error);
+          set({
+            loading: false,
+            error: "Logout failed. Please try again.",
+          });
+        }
       },
 
       setUser: (user, token) =>

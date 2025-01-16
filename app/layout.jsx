@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import TabCleanup from "./components/TabCleanup";
+import Notification from "./components/Notification";
 
 export const metadata = {
   title: "Hyperledger Demo",
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
           </header>
 
           {/* Toast Notifications */}
+          <Notification />
           <ToastContainer
             position="top-right"
             autoClose={5000}

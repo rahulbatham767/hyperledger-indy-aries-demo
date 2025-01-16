@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import useUserStore from "../store/userStore";
 import useStore from "../store/useStore";
-
+import useWebSocketStore from "../store/useWebSocketStore";
 const InputField = ({ id, type, placeholder, value, onChange }) => (
   <div>
     <label
@@ -30,11 +30,14 @@ function Page() {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const { login } = useUserStore();
+
+  const { connect } = useWebSocketStore();
   const {
     fetchConnection,
     getCredentialdefination,
     getSchema,
     credentialRecords,
+    fetchProofRequest,
   } = useStore();
   const router = useRouter();
 
@@ -47,19 +50,24 @@ function Page() {
     }
 
     try {
-      await login({ email, password }).then(() => {
-        router.push("/"); // Redirect after successful login
-        fetchConnection();
-
-        getCredentialdefination();
-        getSchema();
-        credentialRecords();
-      });
-    } catch (err) {
-      toast.error(err.message);
+      const res = await login({ email, password });
+      if (res.success) {
+        toast.success("Login successful!");
+        await Promise.all([
+          fetchConnection(),
+          getCredentialdefination(),
+          getSchema(),
+          credentialRecords(),
+          fetchProofRequest(),
+        ]);
+        connect(); // ✅ WebSocket connection starts only after successful login
+        router.push("/");
+      } else {
+        toast.error(res.message || "Login failed");
+      }
+    } catch (error) {
+      toast.error(error.message || "An error occurred during login.");
     }
-
-    setErrorMessage(""); // Clear error message on form submission
   };
 
   return (

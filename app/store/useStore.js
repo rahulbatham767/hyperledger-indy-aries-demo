@@ -1,6 +1,5 @@
 import axios from "axios";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -8,21 +7,18 @@ import {
   generateCredentialPayload,
   ProposalforCredential,
 } from "../utils/helper";
-
-const userAccess = Cookies.get("userRole"); // Retrieve the user role from cookies
-// const userAccess = localStorage.getItem("userRole"); // Retrieve the user role from cookies
-
-const API_URLS = {
-  admin: process.env.NEXT_PUBLIC_ISSUER_ENDPOINT,
-  verifier: process.env.NEXT_PUBLIC_VERIFIER_ENDPOINT,
-  user: process.env.NEXT_PUBLIC_HOLDER_ENDPOINT,
-};
-
-const url = API_URLS[userAccess] || "";
-
-const apiCall = async (method, url, data = null) => {
+const apiCall = async (method, endpoint, data = null) => {
+  const userAccess = Cookies.get("userRole"); // Dynamically fetch role
+  console.log(userAccess);
+  const API_URLS = {
+    admin: process.env.NEXT_PUBLIC_ISSUER_ENDPOINT,
+    verifier: process.env.NEXT_PUBLIC_VERIFIER_ENDPOINT,
+    user: process.env.NEXT_PUBLIC_HOLDER_ENDPOINT,
+  };
+  const baseUrl = API_URLS[userAccess] || "";
+  console.log(baseUrl);
   try {
-    const response = await axios[method](url, data);
+    const response = await axios[method](`${baseUrl}${endpoint}`, data);
     return response.data;
   } catch (error) {
     throw new Error(error.message || "Something went wrong");
@@ -36,6 +32,7 @@ const useStore = create(
       loading: false,
       error: null,
       connections: [],
+      sendedMessage: [],
       Active: [],
       Pending: [],
       Invitation: [],
@@ -59,8 +56,9 @@ const useStore = create(
 
       fetchConnection: async () => {
         set({ loading: true, error: null, successStatus: null });
+        console.log("inside fetch connections");
         try {
-          const data = await apiCall("get", `${url}/connections`);
+          const data = await apiCall("get", `/connections`);
           const active = data.results.filter((conn) => conn.state === "active");
           const pending = data.results.filter(
             (conn) => conn.state !== "active"
@@ -77,6 +75,41 @@ const useStore = create(
           set({ error: error.message, loading: false, successStatus: false });
         }
       },
+      sendMessage: async (id, content) => {
+        set({ loading: true, error: null, successStatus: null });
+
+        // Defensive check: Ensure sendedMessage is available and initialized
+        const state = get().state;
+
+        const newMessage = [...get().sendedMessage, content];
+        try {
+          // Simulate API call
+          await apiCall("post", `/connections/${id}/send-message`, {
+            content: content.message,
+          });
+
+          set({
+            sendedMessage: newMessage, // Update the state with the new message
+            loading: false,
+            successStatus: true,
+          });
+
+          // Optionally show a success notification
+          toast.success("Message sent successfully!");
+        } catch (error) {
+          set({
+            error: error.message || "An error occurred.",
+            loading: false,
+            successStatus: false,
+          });
+
+          // Optionally show an error notification
+          toast.error(
+            error.message || "An error occurred while sending the message."
+          );
+        }
+      },
+
       reset: (set) => {
         set({
           data: [],
@@ -109,7 +142,7 @@ const useStore = create(
       DeleteConnection: async (invi_msg_id) => {
         set({ loading: true, error: null, successStatus: null });
         try {
-          await apiCall("delete", `${url}/connections/${invi_msg_id}`);
+          await apiCall("delete", `/connections/${invi_msg_id}`);
           set({ loading: false, successStatus: true });
         } catch (error) {
           set({ error: error.message, loading: false, successStatus: false });
@@ -119,16 +152,13 @@ const useStore = create(
       createInvitation: async () => {
         set({ loading: true, error: null, successStatus: null });
         try {
-          console.log(url);
+          console.log("inside create invitation");
           const Alias = sessionStorage.getItem("userName");
-          const data = await apiCall(
-            "post",
-            `${url}/out-of-band/create-invitation`,
-            {
-              Alias,
-              handshake_protocols: ["https://didcomm.org/didexchange/1.0"],
-            }
-          );
+          const data = await apiCall("post", `/out-of-band/create-invitation`, {
+            Alias,
+            handshake_protocols: ["https://didcomm.org/didexchange/1.0"],
+          });
+          console.log("create invitation ", data);
           set({
             Invitation: data,
             loading: false,
@@ -144,7 +174,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/out-of-band/receive-invitation`,
+            `/out-of-band/receive-invitation`,
             data
           );
           set({
@@ -161,13 +191,9 @@ const useStore = create(
         set({ loading: true, error: null, successStatus: null });
         try {
           const Alias = sessionStorage.getItem("userName");
-          const data = await apiCall(
-            "post",
-            `${url}/didexchange/create-request`,
-            {
-              Alias,
-            }
-          );
+          const data = await apiCall("post", `/didexchange/create-request`, {
+            Alias,
+          });
           set({
             loading: false,
             successStatus: true,
@@ -182,7 +208,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/didexchange/${id}/accept-request`,
+            `/didexchange/${id}/accept-request`,
             id
           );
           set({
@@ -198,7 +224,7 @@ const useStore = create(
       createSchema: async (data) => {
         set({ loading: true, error: null, successStatus: null });
         try {
-          const response = await apiCall("post", `${url}/schemas`, data);
+          const response = await apiCall("post", `/schemas`, data);
           set({
             Schemas: response,
             loading: false,
@@ -212,7 +238,7 @@ const useStore = create(
       getSchema: async () => {
         set({ loading: true, error: null, successStatus: null });
         try {
-          const response = await apiCall("get", `${url}/schemas/created`);
+          const response = await apiCall("get", `/schemas/created`);
           set({
             SchemaRecord: response,
             loading: false,
@@ -226,7 +252,7 @@ const useStore = create(
       getSchemaDetails: async (data) => {
         set({ loading: true, error: null, successStatus: null });
         try {
-          const response = await apiCall("get", `${url}/schemas/${data}`);
+          const response = await apiCall("get", `/schemas/${data}`);
           set({
             SchemaDetails: response.schema,
             loading: false,
@@ -244,7 +270,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/credential-definitions`,
+            `/credential-definitions`,
             issuer
           );
           console.log(response);
@@ -259,16 +285,11 @@ const useStore = create(
         try {
           let data;
           if (id) {
-            data = await apiCall(
-              "get",
-              `${url}/credential-definitions/created`,
-              { schema_id: id }
-            );
+            data = await apiCall("get", `/credential-definitions/created`, {
+              schema_id: id,
+            });
           } else {
-            data = await apiCall(
-              "get",
-              `${url}/credential-definitions/created`
-            );
+            data = await apiCall("get", `/credential-definitions/created`);
           }
           set({
             Defination: data,
@@ -284,7 +305,7 @@ const useStore = create(
         set({ loading: true, error: null });
         try {
           const response = await axios.get(
-            `${url}/credential-definitions/${encodeURIComponent(data)}`
+            `/credential-definitions/${encodeURIComponent(data)}`
           );
           set({
             credDefination: response.data,
@@ -300,7 +321,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/issue-credential-2.0/send`,
+            `/issue-credential-2.0/send`,
             payload
           );
           toast.success("Credential Issued Successfully");
@@ -321,7 +342,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/issue-credential-2.0/send-proposal`,
+            `/issue-credential-2.0/send-proposal`,
             payload
           );
 
@@ -340,7 +361,7 @@ const useStore = create(
       credentialRecords: async () => {
         set({ loading: true, error: null, successStatus: null });
         try {
-          const data = await apiCall("get", `${url}/credentials`);
+          const data = await apiCall("get", `/credentials`);
           set({
             IssuedCredentials: data.results,
             loading: false,
@@ -360,7 +381,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/connections/${param}/send-message`,
+            `/connections/${param}/send-message`,
             { content }
           );
           set({
@@ -375,7 +396,7 @@ const useStore = create(
       fetchRequestedCred: async (param) => {
         set({ loading: true, error: null });
         const response = await axios.get(
-          `${url}/present-proof-2.0/records/${param}/credentials`
+          `/present-proof-2.0/records/${param}/credentials`
         );
 
         const CurrentCredential = response.data;
@@ -386,30 +407,33 @@ const useStore = create(
       },
       fetchProofRequest: async (value) => {
         set({ loading: true, error: null, successStatus: null });
+
+        // Prevent API call if state is not provided
+        if (!value) {
+          set({
+            ProofRequests: [],
+            singlePresentation: [],
+            loading: false,
+            successStatus: true,
+          });
+          return; // Exit early if value is not provided
+        }
+
         try {
-          let data;
-          if (value !== "") {
-            data = await apiCall(
-              "get",
-              `${url}/present-proof-2.0/records?limit=100&offset=0&state=${value}`
-            );
-            set({
-              ProofRequests: data.results,
-              loading: false,
-              successStatus: true,
-            });
-          } else {
-            set({
-              ProofRequests: [],
-              singlePresentation: [],
-              loading: false,
-              successStatus: true,
-            });
-          }
+          const data = await apiCall(
+            "get",
+            `/present-proof-2.0/records?limit=100&offset=0&state=${value}`
+          );
+          set({
+            ProofRequests: data.results,
+            loading: false,
+            successStatus: true,
+          });
         } catch (error) {
           set({ error: error.message, loading: false, successStatus: false });
         }
       },
+
       // fetching credential Request
       fetchCredRequest: async (value) => {
         set({ loading: true, error: null, successStatus: null });
@@ -418,7 +442,7 @@ const useStore = create(
           if (value !== "") {
             data = await apiCall(
               "get",
-              `${url}/issue-credential-2.0/records?limit=100&offset=0&state=${value}`
+              `/issue-credential-2.0/records?limit=100&offset=0&state=${value}`
             );
             set({
               Credential_state: data.results,
@@ -443,7 +467,7 @@ const useStore = create(
         try {
           if (param !== "") {
             const response = await axios.get(
-              `${url}/issue-credential-2.0/records/${param}`
+              `/issue-credential-2.0/records/${param}`
             );
             const CurrentCredential = response.data;
             set({
@@ -461,7 +485,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/present-proof-2.0/send-request`,
+            `/present-proof-2.0/send-request`,
             data
           );
           console.log(response);
@@ -480,7 +504,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/present-proof-2.0/records/${id}/send-presentation`,
+            `/present-proof-2.0/records/${id}/send-presentation`,
             data
           );
           set({
@@ -500,7 +524,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "get",
-            `${url}/present-proof-2.0/records/${cred}`
+            `/present-proof-2.0/records/${cred}`
           );
           set({
             singlePresentation: response,
@@ -518,7 +542,7 @@ const useStore = create(
         try {
           const response = await apiCall(
             "post",
-            `${url}/present-proof-2.0/records/${presentationId}/verify-presentation`
+            `/present-proof-2.0/records/${presentationId}/verify-presentation`
           );
           const CurrentVerified = response;
           const OldVerified = [...get().verifiedPresentation];
@@ -566,9 +590,5 @@ const useStore = create(
     }
   )
 );
-
-if (typeof window !== "undefined") {
-  window.store = useStore; // Debugging aid
-}
 
 export default useStore;

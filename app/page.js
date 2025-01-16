@@ -4,6 +4,7 @@ import useUserStore from "./store/userStore";
 import Image from "next/image";
 import Hyperledger from "./hyperleger.png";
 import useStore from "./store/useStore";
+import useWebSocketStore from "./store/useWebSocketStore";
 
 export default function Home() {
   const { user } = useUserStore(); // Get the action to add proof requests
@@ -17,13 +18,7 @@ export default function Home() {
     fetchProofRequest,
   } = useStore();
 
-  useEffect(() => {
-    getCredentialdefination();
-    getSchema();
-    credentialRecords();
-    fetchConnection();
-    fetchProofRequest();
-  }, []);
+ 
 
   return (
     <div className="flex items-center justify-center my-5">

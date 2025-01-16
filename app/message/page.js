@@ -2,55 +2,54 @@
 
 import React, { useEffect, useState } from "react";
 import useStore from "../store/useStore";
+import useWebSocketStore from "../store/useWebSocketStore";
 
 const Page = () => {
-  const [messages, setMessages] = useState([]); // Store messages
-  const [inputMessage, setInputMessage] = useState(""); // Current input message
+  const [inputMessage, setInputMessage] = useState(""); // Message input
   const [relationship, setRelationship] = useState(""); // Selected relationship
-  const { Active, fetchConnection } = useStore();
+  const { Active, fetchConnection, sendMessage } = useStore();
+  const {  recievedMessage, setMessages, messages } =
+    useWebSocketStore();
+  // const [messages, setMessages] = useState([]); // Store both sent and received messages
 
-  // Simulate receiving a message
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "receiver", text: "Hello from the receiver!" },
-      ]);
-    }, 2000);
-
-    return () => clearTimeout(timer);
+    fetchConnection(); // Fetch initial connections
+    // Establish WebSocket connection
   }, []);
 
-  // Fetch connections when the component mounts
   useEffect(() => {
-    fetchConnection();
-  }, []);
+    if (recievedMessage) {
+      // When a message is received, add it to the message list
+      setMessages([{ sender: "receiver", message: recievedMessage }]);
+    }
+  }, [recievedMessage, setMessages]); // Update received messages when a new one arrives
 
-  // Handle sending a message
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "sender", text: inputMessage },
-      ]);
-      setInputMessage(""); // Clear input field
+      const newMessage = { sender: "sender", message: inputMessage };
+      // Send the message via WebSocket and update Zustand store
+      sendMessage(relationship, newMessage).then(() => {
+        setMessages([{ sender: "sender", message: inputMessage }]);
+      });
+      setInputMessage(""); // Clear input after sending the message
     }
   };
 
   return (
     <div className="p-6 space-y-6 w-[45rem] mx-auto">
       {/* Message Container */}
-      <div className="shadow-lg border border-gray-200 rounded-lg p-4 h-80 overflow-y-auto bg-white">
-        {messages.map((msg, index) => (
+      <div className="shadow-lg border h-[32rem] border-gray-200 rounded-lg p-4 overflow-y-auto scroll-smooth bg-white flex flex-col gap-2">
+        {/* All Messages (Sent and Received) */}
+        {messages.map((item, index) => (
           <div
             key={index}
-            className={`my-2 p-2 max-w-xs w-fit rounded-md ${
-              msg.sender === "sender"
-                ? "bg-blue-100 text-left"
-                : "bg-green-100 text-right ml-auto"
+            className={`w-fit p-2 rounded-md max-w-xs ${
+              item.sender === "sender"
+                ? "bg-blue-500 text-white ml-auto" // Sent message on the right
+                : "bg-green-500 text-white mr-auto" // Received message on the left
             }`}
           >
-            <p className="text-sm">{msg.text}</p>
+            <p> {item.message}</p>
           </div>
         ))}
       </div>
@@ -67,21 +66,15 @@ const Page = () => {
             <option value="" disabled>
               Select Relationship
             </option>
-            {Active && Active.length > 0 ? (
-              Active.map((active, i) => (
-                <option key={i} value={active.connection_id}>
-                  {active.alias}: {active.their_did}
-                </option>
-              ))
-            ) : (
-              <option value="" disabled>
-                No Connections Found
+            {Active.map((item, index) => (
+              <option key={index} value={item.connection_id}>
+                {item.their_label}
               </option>
-            )}
+            ))}
           </select>
         </div>
 
-        {/* Textarea for Message */}
+        {/* Textarea */}
         <textarea
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
