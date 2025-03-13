@@ -109,7 +109,7 @@ export default function resultssPage() {
                         <span className="font-medium text-gray-700 capitalize">
                           {key}:
                         </span>
-                        <span className="text-gray-600">{value}</span>
+                        <span className="text-gray-600 break-words">{value}</span>
                       </div>
                     ))}
                   </div>
