@@ -9,10 +9,12 @@ import useWebSocketStore from "./store/useWebSocketStore";
 export default function Home() {
   const { user, isLoggedIn } = useUserStore(); // Get the action to add proof requests
   const { Active, IssuedCredentials } = useStore();
-  const { connect } = useWebSocketStore();
+  const { connectWebSocket } = useWebSocketStore();
 
   useEffect(() => {
-    connect();
+    connectWebSocket(process.env.NEXT_PUBLIC_ISSUER_SOCKET, "issuer");
+    connectWebSocket(process.env.NEXT_PUBLIC_HOLDER_SOCKET, "holder");
+    connectWebSocket(process.env.NEXT_PUBLIC_VERIFIER_SOCKET, "verifier");
   }, []);
   return (
     <div className="flex items-center justify-center my-5">

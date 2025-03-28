@@ -1,105 +1,226 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { topics } from "../utils/topics";
 import Cookies from "js-cookie";
-
-const API_URLS = {
-  admin: process.env.NEXT_PUBLIC_ISSUER_SOCKET,
-  verifier: process.env.NEXT_PUBLIC_VERIFIER_SOCKET,
-  user: process.env.NEXT_PUBLIC_HOLDER_SOCKET,
-};
+import { toast } from "react-toastify";
+import {
+  handleHolderTopics,
+  handleIssuerTopics,
+  handleVerifierTopics,
+} from "../utils/topics";
 
 const useWebSocketStore = create(
   persist(
-    (set) => ({
-      ws: null,
+    (set, get) => ({
+      // Separate WebSocket connections for each agent type
+      wsConnections: {
+        issuer: null,
+        verifier: null,
+        holder: null,
+      },
+      connectedRoles: [], // Track which roles are connected
       messages: [],
-      connections: {},
-      recievedMessage: "",
       proofs: {},
       credentials: {},
       revocation: {},
-      connected: false,
       notifications: {},
-      newMessageNotification: false, // Store for new message notification state
+      token: null,
 
-      setConnected: (status) => set({ connected: status }),
+      // Set authentication token
+      setToken: (token) => set({ token }),
 
-      setMessages: (newMessages) => {
-        set((state) => {
-          // Append new messages to the existing ones
-          const updatedMessages = [...state.messages, ...newMessages];
-          const lastMessage = newMessages[0]; // Get the last message
-
-          if (lastMessage) {
-            // Trigger notification when a new message arrives
-            set({ newMessageNotification: true });
-          }
-
-          return { messages: updatedMessages };
-        });
-      },
-      clearNotification: (topic) =>
-        set((state) => {
-          const updatedNotifications = { ...state.notifications };
-          delete updatedNotifications[topic];
-          return { notifications: updatedNotifications };
-        }),
-      clearAllNotifications: () => set({ notifications: {} }),
-
-      connect: () => {
-        const userAccess = Cookies.get("userRole"); // Retrieve the user role from cookies
-        const url = API_URLS[userAccess] || "";
-        if (!url) {
-          console.error("WebSocket URL not found for the user role");
+      // Connect WebSocket for a specific agent type
+      connectWebSocket: (url, type) => {
+        if (!url || (!url.startsWith("ws://") && !url.startsWith("wss://"))) {
+          console.error(`[${type.toUpperCase()}] Invalid WebSocket URL:`, url);
+          toast.error(`Invalid ${type} WebSocket URL`);
           return;
         }
-        console.log(url);
-        const ws = new WebSocket(`${url}`);
+
+        if (get().wsConnections[type]) {
+          console.warn(`[${type.toUpperCase()}] WebSocket already connected.`);
+          return;
+        }
+
+        console.log(`[${type.toUpperCase()}] Connecting WebSocket to:`, url);
+        const ws = new WebSocket(url);
 
         ws.onopen = () => {
-          set({ connected: true });
-          console.log("✅ WebSocket connected");
+          console.log(`[${type.toUpperCase()}] WebSocket connected.`);
+          set((state) => ({
+            wsConnections: { ...state.wsConnections, [type]: ws },
+            connectedRoles: [...new Set([...state.connectedRoles, type])],
+          }));
+          toast.success(
+            `${type.charAt(0).toUpperCase() + type.slice(1)} connected`
+          );
         };
 
         ws.onclose = () => {
-          set({ connected: false });
-          console.log("🔌 WebSocket disconnected");
+          console.log(`[${type.toUpperCase()}] WebSocket disconnected.`);
+          set((state) => ({
+            wsConnections: { ...state.wsConnections, [type]: null },
+            connectedRoles: state.connectedRoles.filter(
+              (role) => role !== type
+            ),
+          }));
+
+          // Attempt reconnection after delay
+          setTimeout(() => {
+            if (!get().wsConnections[type]) {
+              get().connectWebSocket(url, type);
+            }
+          }, 5000);
         };
 
-        ws.onmessage = (event) => {
-          const { topic, payload } = JSON.parse(event.data); // Assuming event.data is JSON
-          console.log("topic", topic);
-          if (topic === "ping") return;
-          console.log("topic after ping", topic);
-          topics(topic, payload, set); // Pass data to the topics handler
+        ws.onerror = (err) => {
+          console.error(`[${type.toUpperCase()}] WebSocket Error:`, err);
+          toast.error(`${type} connection error`);
         };
 
-        set({ ws });
+        ws.onmessage = async (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            const { topic, payload } = message;
+
+            if (topic !== "ping") {
+              console.log(
+                `[${type.toUpperCase()}] [${new Date().toISOString()}] Message:`,
+                topic,
+                payload
+              );
+
+              // Add to messages store
+              set((state) => ({
+                messages: [
+                  ...state.messages,
+                  { type, topic, payload, timestamp: new Date().toISOString() },
+                ],
+              }));
+
+              // Handle message based on agent type
+              if (type === "verifier") {
+                handleVerifierTopics(topic, payload);
+              } else if (type === "holder") {
+                handleHolderTopics(topic, payload);
+              } else if (type === "issuer") {
+                handleIssuerTopics(topic, payload, get().token);
+              }
+
+              // Create notification
+              set((state) => ({
+                notifications: {
+                  ...state.notifications,
+                  [topic]: {
+                    type,
+                    message: `New ${topic} message from ${type}`,
+                    payload,
+                    timestamp: new Date().toISOString(),
+                    read: false,
+                  },
+                },
+              }));
+            }
+          } catch (error) {
+            console.error(
+              `[${type.toUpperCase()}] Error processing message:`,
+              error
+            );
+            toast.error("Error processing WebSocket message");
+          }
+        };
+
+        set((state) => ({
+          wsConnections: { ...state.wsConnections, [type]: ws },
+        }));
       },
-      disconnect: () => {
-        const ws = get().ws; // Retrieve the WebSocket from state
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.close(); // Close the WebSocket connection
-            console.log("🔌 WebSocket manually disconnected");
-            set({ connected: false }); // Update state to reflect disconnection
+
+      // Disconnect specific WebSocket
+      disconnectWebSocket: (type) => {
+        const ws = get().wsConnections[type];
+        if (ws) {
+          ws.close();
+          set((state) => ({
+            wsConnections: { ...state.wsConnections, [type]: null },
+            connectedRoles: state.connectedRoles.filter(
+              (role) => role !== type
+            ),
+          }));
+          console.log(
+            `[${type.toUpperCase()}] WebSocket manually disconnected.`
+          );
         }
-    },
-      sendMessage: (topic, payload) => {
-        const { ws } = set.getState();
-        if (ws && ws.readyState === WebSocket.OPEN) {
+      },
+
+      // Disconnect all WebSockets
+      disconnectAll: () => {
+        Object.entries(get().wsConnections).forEach(([type, ws]) => {
+          if (ws) ws.close();
+        });
+        set({
+          wsConnections: {
+            issuer: null,
+            verifier: null,
+            holder: null,
+          },
+          connectedRoles: [],
+        });
+      },
+
+      // Send message through specific WebSocket
+      sendMessage: (type, topic, payload) => {
+        const ws = get().wsConnections[type];
+        if (!ws) {
+          console.error(`[${type.toUpperCase()}] WebSocket not connected`);
+          toast.error(`${type} connection not established`);
+          return;
+        }
+
+        if (ws.readyState === WebSocket.OPEN) {
           const message = { topic, payload };
           ws.send(JSON.stringify(message));
+          console.log(`[${type.toUpperCase()}] Sent message:`, topic, payload);
+        } else {
+          console.error(`[${type.toUpperCase()}] WebSocket not ready`);
+          toast.error(`${type} connection not ready`);
         }
+      },
+      // Clear notifications
+      clearNotification: (topic) => {
+        set((state) => {
+          const newNotifications = { ...state.notifications };
+          delete newNotifications[topic];
+          return { notifications: newNotifications };
+        });
+      },
+
+      // Clear all state
+      reset: () => {
+        get().disconnectAll();
+        set({
+          messages: [],
+          proofs: {},
+          credentials: {},
+          revocation: {},
+          notifications: {},
+          token: null,
+        });
       },
     }),
     {
-      name: "socket-storage",
+      name: "websocket-store",
+      partialize: (state) => ({
+        // Only persist these states
+        messages: state.messages,
+        proofs: state.proofs,
+        credentials: state.credentials,
+        revocation: state.revocation,
+        notifications: state.notifications,
+        token: state.token,
+      }),
       storage: {
         getItem: (name) => {
           if (typeof window !== "undefined") {
             const item = localStorage.getItem(name);
-            // console.log(`Fetching from localStorage: ${name}`, item);
             return item ? JSON.parse(item) : null;
           }
           return null;
@@ -107,13 +228,11 @@ const useWebSocketStore = create(
         setItem: (name, value) => {
           if (typeof window !== "undefined") {
             localStorage.setItem(name, JSON.stringify(value));
-            console.log(`Saving to localStorage: ${name}`, value);
           }
         },
         removeItem: (name) => {
           if (typeof window !== "undefined") {
             localStorage.removeItem(name);
-            console.log(`Removing from localStorage: ${name}`);
           }
         },
       },

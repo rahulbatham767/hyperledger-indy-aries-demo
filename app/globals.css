@@ -72,3 +72,32 @@ body {
     @apply bg-background text-foreground;
   }
 }
+.credential-display {
+  background: #f4f4f4;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.button-group {
+  margin-top: 10px;
+}
+
+.approve-btn {
+  margin-right: 10px;
+  background-color: green;
+  color: white;
+  border-radius: 5px;
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+}
+
+.reject-btn {
+  background-color: red;
+  color: white;
+  border-radius: 5px;
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+}
