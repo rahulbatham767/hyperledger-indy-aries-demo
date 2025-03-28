@@ -1,4 +1,7 @@
-export function topics(topic, payload, set) {
+import { toast } from "react-toastify";
+import { getCredentialID, getRequestCredential } from "./helper";
+
+export async function topics(topic, payload, set) {
   try {
     // Handling each Hyperledger Aries topic
     switch (topic) {
@@ -40,7 +43,99 @@ export function topics(topic, payload, set) {
         });
         break;
 
-      case "proofs":
+      case "present_proof_v2_0":
+        toast.success("Proof Request Received", payload);
+        if (payload?.state === "request-received") {
+          try {
+            const id = await getCredentialID();
+            console.log("Credential ID:", id);
+
+            const extractCred = await getRequestCredential(id);
+            console.log("Extracted Credential:", extractCred);
+
+            if (!extractCred) {
+              console.error("❌ Failed to extract credentials");
+              toast.error("Failed to extract credentials.");
+              return;
+            }
+
+            const handleApprove = (t) => {
+              console.log("Approved:", extractCred);
+              console.log("Verifier: Proof verification successful", payload);
+              toast.dismiss(t.id);
+              toast.success("✅ Proof Approved");
+            };
+
+            const handleReject = (t) => {
+              console.log("Rejected:", extractCred);
+              deleteCredentialRequest(id);
+              toast.dismiss(t.id);
+              toast.error("❌ Proof Rejected");
+            };
+
+            toast(
+              (t) => (
+                <div>
+                  <h3>Proof Request Approval</h3>
+                  <p>
+                    This website requested these fields from your credential:
+                  </p>
+                  <div
+                    style={{
+                      background: "#f4f4f4",
+                      padding: "10px",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <p>
+                      <strong>Name:</strong> {extractCred.name}
+                    </p>
+                    <p>
+                      <strong>Date of Birth:</strong> {extractCred.dob}
+                    </p>
+                    <p>
+                      <strong>Email:</strong> {extractCred.email}
+                    </p>
+                    <p>
+                      <strong>Credential Number:</strong>{" "}
+                      {extractCred.credentialNo}
+                    </p>
+                  </div>
+                  <div style={{ marginTop: "10px" }}>
+                    <button
+                      onClick={() => handleApprove(t)}
+                      style={{
+                        marginRight: "10px",
+                        backgroundColor: "green",
+                        color: "white",
+                        borderRadius: "5px",
+                        padding: "8px 16px",
+                      }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(t)}
+                      style={{
+                        backgroundColor: "red",
+                        color: "white",
+                        borderRadius: "5px",
+                        padding: "8px 16px",
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ),
+              { position: "top-center", autoClose: false, closeOnClick: false }
+            );
+          } catch (error) {
+            console.error("Error handling proof request:", error);
+            toast.error("Error processing proof request.");
+          }
+        }
+
         set((state) => {
           const updatedProofs = {
             ...state.proofs,

@@ -48,7 +48,7 @@ const useStore = create(
       ProofRequests: [],
       Presentations: [],
       ReceieveProof: [],
-      RequestedCred: [],
+      RequestedCreds: [],
       Credential_state: [],
       singlePresentation: [],
       verifiedPresentation: [],
@@ -59,10 +59,9 @@ const useStore = create(
         console.log("inside fetch connections");
         try {
           const data = await apiCall("get", `/connections`);
-          const active = data.results.filter((conn) => conn.state === "active");
-          const pending = data.results.filter(
-            (conn) => conn.state !== "active"
-          );
+          const results = data?.results || [];
+          const active = results.filter((conn) => conn.state === "active");
+          const pending = results.filter((conn) => conn.state !== "active");
 
           set({
             connections: data,
@@ -148,7 +147,9 @@ const useStore = create(
           set({ error: error.message, loading: false, successStatus: false });
         }
       },
-
+      deleteInvitation: () => {
+        set({ Invitation: [] });
+      },
       createInvitation: async () => {
         set({ loading: true, error: null, successStatus: null });
         try {
@@ -182,6 +183,7 @@ const useStore = create(
             loading: false,
             successStatus: true,
           });
+          return response;
         } catch (error) {
           console.log("error message in receive", error.message);
           set({ error: error.message, loading: false, successStatus: false });
@@ -395,17 +397,26 @@ const useStore = create(
       },
       fetchRequestedCred: async (param) => {
         set({ loading: true, error: null });
-        const response = await axios.get(
-          `/present-proof-2.0/records/${param}/credentials`
-        );
+        try {
+          const response = await apiCall(
+            "get",
+            `/present-proof-2.0/records/${param}/credentials`
+          );
+          console.log("response from get requested cred", response);
 
-        const CurrentCredential = response.data;
-        set({
-          RequestedCred: CurrentCredential,
-          loading: false,
-        }); // Update data and clear
+          set({
+            RequestedCreds: response,
+            loading: false,
+          });
+        } catch (error) {
+          console.error("Error fetching requested cred:", error);
+          set({
+            error: error.message || "An error occurred",
+            loading: false,
+          });
+        }
       },
-      fetchProofRequest: async (value) => {
+      fetchProofRequest: async (value, id) => {
         set({ loading: true, error: null, successStatus: null });
 
         // Prevent API call if state is not provided
@@ -419,11 +430,15 @@ const useStore = create(
           return; // Exit early if value is not provided
         }
 
+        console.log("value is", value, id);
+
         try {
           const data = await apiCall(
             "get",
-            `/present-proof-2.0/records?limit=100&offset=0&state=${value}`
+            `/present-proof-2.0/records?state=${value}`
           );
+          console.log("proof request data", data);
+
           set({
             ProofRequests: data.results,
             loading: false,

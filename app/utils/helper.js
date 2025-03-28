@@ -1,4 +1,9 @@
+import axios from "axios";
+
 // format date
+export function isValidDate(value) {
+  return !isNaN(Date.parse(value));
+}
 export function formatDate(dateString) {
   const date = new Date(dateString);
 
@@ -216,18 +221,36 @@ export function ProofRequests(proof) {
 }
 export function PresentationTemplate(proof) {
   const requestedAttributes = {};
+  console.log("proof in presentation template", proof);
 
   // Ensure proof.RequestedCred is an array before using forEach
   if (Array.isArray(proof.RequestedCred)) {
     proof.RequestedCred.forEach((item) => {
-      item.presentation_referents.forEach((referent) => {
-        // Dynamically build the requested attributes
-        requestedAttributes[referent] = {
-          cred_id: item.cred_info.referent,
-          revealed: proof.selectedAttributes[referent] || false, // Default to false if not selected
-        };
-      });
+      console.log("item in presentation template", item);
+
+      if (Array.isArray(item.presentation_referents)) {
+        item.presentation_referents.forEach((referent, index) => {
+          // Dynamically build the requested attributes
+
+          const key = `attr${index + 1}_referent`;
+          const isSelected = proof.selectedAttributes?.[key] || false;
+
+          console.log(proof.selectedAttributes);
+
+          requestedAttributes[referent] = {
+            cred_id: item.cred_info.referent,
+            revealed: isSelected || false, // Default to false if not selected
+          };
+        });
+      } else {
+        console.error(
+          "Expected item.presentation_referents to be an array but got",
+          typeof item.presentation_referents
+        );
+      }
     });
+
+    console.log("proof.RequestedCred", proof);
   } else {
     console.error(
       "Expected proof.RequestedCred to be an array but got",
@@ -256,3 +279,31 @@ export function issueAttributes(attributes) {
     return { name: key, value: value };
   });
 }
+export const getCredentialID = async () => {
+  const response = await axios.get(
+    `${process.env.NEXT_PUBLIC_HOLDER_ENDPOINT}/present-proof-2.0/records`
+  );
+  console.log("response from get credential id", response.data);
+  const credential_id = response.data.results[0].pres_ex_id;
+  return credential_id;
+};
+
+export const getRequestCredential = async (pres_ex_id) => {
+  console.log("pres_ex_id", pres_ex_id);
+  const response = await axios.get(
+    `${process.env.NEXT_PUBLIC_HOLDER_ENDPOINT}/present-proof-2.0/records/${pres_ex_id}/credentials`
+  );
+
+  console.log("response from get request credential", response);
+
+  const data = response.data;
+  console.log("response from get request credential data", data);
+
+  const cred = data.map((item) => {
+    console.log("response from get request credential", item?.cred_info?.attrs);
+    return item?.cred_info?.attrs;
+  });
+  console.log("credentialS are ", cred);
+
+  return cred;
+};

@@ -53,8 +53,8 @@ export async function POST(req) {
         success: true,
         message: "Login successful!",
         data: user,
+        role: user.role,
         token: token,
-        login: "true",
       },
       { status: 200 }
     );

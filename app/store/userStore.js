@@ -3,6 +3,7 @@ import Cookies from "js-cookie";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useRouter } from "next/router";
+import toast from "react-hot-toast";
 
 const useUserStore = create(
   persist(
@@ -21,9 +22,8 @@ const useUserStore = create(
         try {
           const response = await axios.post("/api/login", { email, password });
           const userData = response.data;
-          console.log(userData);
-          // ✅ Added additional check for userData structure
-          if (userData.success && userData.data && userData.data.name) {
+
+          if (userData.success && userData.data?.name) {
             set({
               isLoggedIn: true,
               user: userData.data,
@@ -33,21 +33,25 @@ const useUserStore = create(
               success: true,
             });
 
-            // ✅ Using sessionStorage to store user details securely
-            sessionStorage.setItem("userRole", userData.data.role || "");
-            sessionStorage.setItem("isLoggedIn", "true");
-            sessionStorage.setItem(
-              "userName",
-              userData.data.user?.name || "Unknown"
-            );
+            toast.success("Login successful!");
+            window.location.href = "/"; // Redirect after login
 
             return userData;
           } else {
-            throw new Error("Invalid response structure from the server");
+            toast.error(userData?.message || "Login failed.");
+            set({
+              loading: false,
+              error: userData?.message || "Login failed.",
+              success: false,
+            });
+            return userData;
           }
         } catch (error) {
-          set({ loading: false, error: error.message, success: false });
-          return { success: false, message: error.message };
+          const errorMessage =
+            error?.response?.data?.message || "An unexpected error occurred.";
+          toast.error(errorMessage);
+          set({ loading: false, error: errorMessage, success: false });
+          return { success: false, message: errorMessage };
         }
       },
 

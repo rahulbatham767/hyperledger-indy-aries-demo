@@ -1,50 +1,38 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import useStore from "../store/useStore";
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-export default function TabsNavigation() {
-  const [activeTab, setActiveTab] = useState("");
-  const router = useRouter();
+const TabsNavigation = () => {
   const pathname = usePathname();
-
-  const { fetchConnection } = useStore();
   const tabs = [
-    { id: "active", label: "Active", href: "/connection/active" },
-    { id: "pending", label: "Pending", href: "/connection/pending" },
-    { id: "new", label: "New", href: "/connection/new" },
-    { id: "accept", label: "Accept", href: "/connection/accept" },
+    { name: "Active", href: "/connection/active" },
+    { name: "Pending", href: "/connection/pending" },
+    { name: "Create", href: "/connection/create" },
+    { name: "Accept", href: "/connection/accept" },
   ];
 
-  // Sync activeTab with the current pathname
-  useEffect(() => {
-    const currentTab = tabs.find((tab) => pathname.includes(tab.href))?.id;
-    setActiveTab(currentTab || "active");
-  }, [pathname]);
-
-  const handleTabClick = (id, href) => {
-    setActiveTab(id);
-    router.push(href);
-    fetchConnection();
-  };
-
   return (
-    <div className="tabs-container w-full">
-      <div className="tabs-list grid mt-3 grid-cols-4 w-full rounded-t-lg">
+    <div className="border-b border-gray-200">
+      <nav className="flex">
         {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabClick(tab.id, tab.href)}
-            className={`tab-item py-2 text-sm border m-1 rounded text-center ${
-              activeTab === tab.id
-                ? "bg-slate-500 text-white font-semibold"
-                : "bg-gray-200 text-gray-700"
-            } hover:bg-slate-300`}
+          <Link
+            key={tab.name}
+            href={tab.href}
+            className={cn(
+              "py-4 flex-1 text-center font-medium text-sm border-b-2",
+              pathname === tab.href
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            )}
           >
-            {tab.label}
-          </button>
+            {tab.name}
+          </Link>
         ))}
-      </div>
+      </nav>
     </div>
   );
-}
+};
+
+export default TabsNavigation;
