@@ -17,6 +17,7 @@ const AcceptPage = () => {
       toast.error("Please paste a valid invitation link");
       return;
     }
+<<<<<<< HEAD
     
     try {
       JSON.parse(pastedLink);
@@ -34,8 +35,52 @@ const AcceptPage = () => {
         });
     } catch (e) {
       toast.error("❌ Invalid JSON format. Please check your invitation.");
-    }
+=======
+    // Process the invitation link here
+    RecieveInvitation(JSON.parse(pastedLink)).then(() => {
+      console.log("success status outside ", successStatus);
+      if (successStatus) {
+        console.log("success status inside ", successStatus);
+        setPastedLink("");
+        fetchConnection().then(() => {
+          toast.success(
+            `Connection established Successfully with ${
+              Invitation?.invitation?.label?.charAt(0).toUpperCase() +
+              Invitation?.invitation?.label?.slice(1)
+            }`
+          );
+
+          route.push("/connection/active");
+        });
+      }
+    });
   };
+
+const pasteText = async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+
+    setPastedLink(text);
+    if (text.startsWith("{")) {
+      toast.success("📋 Link Pasted Successfully");
+    } else {
+      toast.error("Please Provide a valid JSON Object");
+>>>>>>> 13efa58 (Enhance clipboard functionality: improve error handling and enable manual paste option)
+    }
+  } catch (error) {
+    console.error("Clipboard read failed:", error);
+    toast.error("Clipboard access failed. Please paste manually.");
+    
+    // Enable manual paste
+    const textarea = document.getElementById("paste-area");
+    if (textarea) {
+      textarea.readOnly = false;
+      textarea.placeholder = "Clipboard access failed. Please paste using Ctrl+V or Command+V.";
+      textarea.focus();
+    }
+  }
+};
+
 
   const pasteFromClipboard = async () => {
     try {
@@ -55,6 +100,7 @@ const AcceptPage = () => {
   if (loading) return <LoadingScr />;
 
   return (
+<<<<<<< HEAD
     <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Instructions */}
@@ -96,6 +142,43 @@ const AcceptPage = () => {
                 <p className="text-sm text-gray-600 mt-1">Ensure the invitation hasn't expired before accepting</p>
               </div>
             </div>
+=======
+    <div>
+      {loading ? (
+        <LoadingScr />
+      ) : (
+        <div className="flex flex-col w-full p-4 border border-gray-300 rounded-lg bg-white shadow-md">
+          <h2 className="text-2xl font-semibold text-slate-700 mb-4">
+            Accept Invitation
+          </h2>
+
+         <div className="mb-4">
+  <textarea
+    id="paste-area"
+    value={pastedLink}
+    placeholder="Click on the text area to paste the invitation"
+    className="w-full h-40 p-2 border border-slate-300 rounded-md bg-slate-100 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+    readOnly
+    onClick={pasteText}
+    onChange={(e) => setPastedLink(e.target.value)}
+  />
+</div>
+
+
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={handleAcceptInvitation}
+              className="px-4 py-2 bg-slate-500 text-white rounded-md hover:bg-slate-600"
+            >
+              Accept Invitation
+            </button>
+            <button
+              onClick={() => setPastedLink("")}
+              className="ml-3 px-4 py-2 bg-slate-500 text-white rounded-md hover:bg-slate-600"
+            >
+              Clear
+            </button>
+>>>>>>> 13efa58 (Enhance clipboard functionality: improve error handling and enable manual paste option)
           </div>
         </div>
 
@@ -185,4 +268,9 @@ const AcceptPage = () => {
   );
 };
 
+<<<<<<< HEAD
 export default AcceptPage;
+=======
+export default page;
+
+>>>>>>> 13efa58 (Enhance clipboard functionality: improve error handling and enable manual paste option)
